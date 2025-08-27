@@ -1,0 +1,30 @@
+openapi: 3.0.0
+info:
+  title: URL Compare API
+  version: 1.0.0
+  description: API specification for the URL Compare application
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+
+paths:
+  # Add your API endpoints here
+  # Example:
+  # /compare:
+  #   post:
+  #     summary: Compare two URLs
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               url1:
+  #                 type: string
+  #               url2:
+  #                 type: string
+  #     responses:
+  #       '200':
+  #         description: Comparison successful
