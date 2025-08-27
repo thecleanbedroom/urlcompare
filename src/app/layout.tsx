@@ -15,21 +15,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Z.ai Code Scaffold - AI-Powered Development",
-  description: "Modern Next.js scaffold optimized for AI-powered development with Z.ai. Built with TypeScript, Tailwind CSS, and shadcn/ui.",
-  keywords: ["Z.ai", "Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "AI development", "React"],
-  authors: [{ name: "Z.ai Team" }],
+  title: "URL Compare - Compare URLs between domains",
+  description: "A tool to compare URLs between different domains and check their status",
+  keywords: ["URL", "Compare", "Domain Migration", "URL Checker", "Web Development"],
+  authors: [{ name: "URL Compare Team" }],
   openGraph: {
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
-    url: "https://chat.z.ai",
-    siteName: "Z.ai",
+    title: "URL Compare",
+    description: "Compare URLs between domains and check their status",
+    url: "",
+    siteName: "URL Compare",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
+    title: "URL Compare",
+    description: "Compare URLs between domains and check their status",
   },
 };
 

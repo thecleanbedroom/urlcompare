@@ -220,8 +220,8 @@ export default function Home() {
     }
   }
 
-  const runComparison = async (useExistingJob = false) => {
-    if ((!sourceUrls.trim() || !newDomain.trim()) && !useExistingJob) {
+  const runComparison = async () => {
+    if (!sourceUrls.trim() || !newDomain.trim()) {
       setError('Please enter source URLs and new domain')
       return
     }
@@ -229,20 +229,15 @@ export default function Home() {
     setIsRunning(true)
     setError(null)
     
-    if (!useExistingJob) {
-      setResults([])
-      setSummary(null)
-      setProgress(0)
-    }
+    setResults([])
+    setSummary(null)
+    setProgress(0)
 
     const urls = parseUrls(sourceUrls)
     
     try {
-      const url = useExistingJob && jobId 
-        ? `/api/comparison/rerun?jobId=${jobId}`
-        : '/api/comparison'
-      
-      const method = useExistingJob ? 'PUT' : 'POST'
+      const url = '/api/comparison'
+      const method = 'POST'
       
       const response = await fetch(url, {
         method,
@@ -452,23 +447,12 @@ https://oldsite.com/products/item1"
               <Button 
                 onClick={(e) => {
                   e.preventDefault();
-                  runComparison(true);
-                }}
-                disabled={isRunning || !jobId}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {isRunning ? 'Processing...' : 'Rerun Comparison'}
-              </Button>
-              
-              <Button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  runComparison(false);
+                  runComparison();
                 }}
                 disabled={isRunning}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
-                Start New Comparison
+                Start Comparison
               </Button>
 
               {results.length > 0 && (

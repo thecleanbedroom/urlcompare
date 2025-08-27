@@ -32,8 +32,8 @@ export function NavBar() {
   };
 
   return (
-    <nav className="border-b">
-      <div className="container mx-auto px-4 py-3">
+    <nav className="border-b bg-background">
+      <div className="max-w-4xl mx-auto px-4 py-3">
         <div className="flex items-center space-x-8">
           <h1 className="text-xl font-bold">URL Compare</h1>
           <div className="flex space-x-1">
