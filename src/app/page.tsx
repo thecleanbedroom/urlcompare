@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,6 +31,7 @@ interface JobSummary {
 }
 
 export default function Home() {
+  const searchParams = useSearchParams()
   const [sourceUrls, setSourceUrls] = useState('')
   const [newDomain, setNewDomain] = useState('')
   const [jobName, setJobName] = useState('')
@@ -40,8 +42,10 @@ export default function Home() {
   const [results, setResults] = useState<UrlResult[]>([])
   const [summary, setSummary] = useState<JobSummary | null>(null)
   const [isRunning, setIsRunning] = useState(false)
-  const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const [progress, setProgress] = useState(0)
+  const [jobId, setJobId] = useState<string | null>(null)
+  const [isLoadingJob, setIsLoadingJob] = useState(false)
 
   const parseUrls = (text: string): string[] => {
     return text
@@ -50,86 +54,216 @@ export default function Home() {
       .filter(url => url && url.startsWith('http'))
   }
 
-  const runComparison = async () => {
-    if (!sourceUrls.trim() || !newDomain.trim()) {
+  // Load job if jobId is in URL
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadJob = async (id: string) => {
+      if (!isMounted) return;
+      
+      try {
+        setIsLoadingJob(true);
+        setError(null);
+        console.log('1. Fetching job with ID:', id);
+        const response = await fetch(`/api/comparison?jobId=${id}`);
+        console.log('2. Response status:', response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('3. Error response:', errorText);
+          throw new Error(`Failed to load job: ${response.status} ${response.statusText}`);
+        }
+        
+        const responseData = await response.json();
+        console.log('4. Job data loaded:', responseData);
+        
+        if (!isMounted) {
+          console.log('5. Component unmounted, aborting');
+          return;
+        }
+        
+        // The API returns the job in a 'job' property
+        const job = responseData.job;
+        if (!job) {
+          throw new Error('Invalid job data received from server');
+        }
+        
+        // Parse sourceUrls from the job data
+        const sourceUrls = typeof job.sourceUrls === 'string' 
+          ? JSON.parse(job.sourceUrls) 
+          : job.sourceUrls || [];
+          
+        const urls = Array.isArray(sourceUrls) 
+          ? sourceUrls.join('\n')
+          : '';
+        
+        console.log('6. Setting form state with job data');
+        setSourceUrls(urls);
+        setNewDomain(job.newDomain);
+        setJobName(job.name || '');
+        setJobId(job.id);
+        
+        if (job.status === 'completed') {
+          console.log('7. Job is completed, setting results');
+          setResults(responseData.results || []);
+          setSummary(responseData.summary);
+          setProgress(100);
+        } else if (job.status === 'running') {
+          console.log('7. Job is running, starting polling');
+          await pollForCompletion(job.id);
+        }
+      } catch (err) {
+        if (isMounted) {
+          const errorMessage = err instanceof Error ? err.message : 'Failed to load job';
+          console.error('Error loading job:', errorMessage, err);
+          setError(errorMessage);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingJob(false);
+        }
+      }
+    };
+
+    const jobIdParam = searchParams.get('jobId');
+    if (jobIdParam) {
+      console.log('Job ID found in URL, loading job:', jobIdParam);
+      loadJob(jobIdParam);
+    } else {
+      console.log('No job ID in URL, resetting form');
+      // Reset form if no jobId is present
+      setSourceUrls('');
+      setNewDomain('');
+      setJobName('');
+      setJobId(null);
+      setResults([]);
+      setSummary(null);
+      setProgress(0);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [searchParams]);
+
+  const pollForCompletion = async (jobId: string) => {
+    const maxPollTime = 300000; // 5 minutes max polling time
+    const startTime = Date.now();
+    let isCancelled = false;
+
+    // Create a controller to handle cleanup
+    const controller = new AbortController();
+    
+    try {
+      while (!isCancelled) {
+        console.log('Polling job status for ID:', jobId);
+        const pollResponse = await fetch(`/api/comparison?jobId=${jobId}`, {
+          signal: controller.signal,
+          cache: 'no-store' // Prevent caching of the poll request
+        });
+        
+        if (!pollResponse.ok) {
+          const errorText = await pollResponse.text();
+          console.error('Error polling job status:', pollResponse.status, errorText);
+          throw new Error(`Failed to fetch job status: ${pollResponse.status} ${pollResponse.statusText}`);
+        }
+
+        const pollData = await pollResponse.json();
+        console.log('Poll response data:', pollData);
+        
+        if (!pollData.job) {
+          throw new Error('Invalid job data received during polling');
+        }
+        
+        const { job, summary, results } = pollData;
+
+        if (job.status === 'completed') {
+          console.log('Job completed, setting results');
+          setResults(results || []);
+          setSummary(summary);
+          setIsRunning(false);
+          setProgress(100);
+          return true;
+        } else if (job.status === 'failed') {
+          throw new Error('Job failed to complete');
+        } else {
+          // Check for timeout
+          if (Date.now() - startTime > maxPollTime) {
+            throw new Error('Polling timeout - job taking too long');
+          }
+          
+          // Update progress
+          const progress = job.totalUrls > 0 
+            ? Math.round((job.completedUrls / job.totalUrls) * 100) 
+            : 0;
+            
+          console.log(`Job progress: ${progress}% (${job.completedUrls}/${job.totalUrls})`);
+          setProgress(progress);
+          
+          // Wait before polling again with a way to cancel
+          await new Promise((resolve) => {
+            const timeoutId = setTimeout(resolve, 2000);
+            controller.signal.addEventListener('abort', () => {
+              clearTimeout(timeoutId);
+              resolve(null);
+            });
+          });
+        }
+      }
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        setError(error instanceof Error ? error.message : 'An error occurred during polling');
+        setIsRunning(false);
+      }
+    } finally {
+      controller.abort();
+    }
+  }
+
+  const runComparison = async (useExistingJob = false) => {
+    if ((!sourceUrls.trim() || !newDomain.trim()) && !useExistingJob) {
       setError('Please enter source URLs and new domain')
       return
     }
 
     setIsRunning(true)
     setError(null)
-    setResults([])
-    setSummary(null)
-    setProgress(0)
-
-    const urls = parseUrls(sourceUrls)
-    const config = {
-      followRedirects,
-      maxConcurrency,
-      retryAttempts,
-      timeoutSeconds
+    
+    if (!useExistingJob) {
+      setResults([])
+      setSummary(null)
+      setProgress(0)
     }
 
+    const urls = parseUrls(sourceUrls)
+    
     try {
-      const response = await fetch('/api/comparison', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const url = useExistingJob && jobId 
+        ? `/api/comparison/rerun?jobId=${jobId}`
+        : '/api/comparison'
+      
+      const method = useExistingJob ? 'PUT' : 'POST'
+      
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sourceUrls: urls,
           newDomain,
-          config,
-          name: jobName
-        })
+          name: jobName || undefined,
+          config: { followRedirects, maxConcurrency, retryAttempts, timeoutSeconds },
+        }),
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to start comparison')
-      }
+      if (!response.ok) throw new Error('Failed to start comparison')
 
       const data = await response.json()
-      const { jobId } = data
-
-      // Poll for job completion
-      const pollForCompletion = async () => {
-        const maxPollTime = 300000 // 5 minutes max polling time
-        const startTime = Date.now()
-        
-        while (true) {
-          const pollResponse = await fetch(`/api/comparison?jobId=${jobId}`)
-          if (!pollResponse.ok) {
-            throw new Error('Failed to fetch job status')
-          }
-
-          const pollData = await pollResponse.json()
-          const { job, summary, results } = pollData
-
-          if (job.status === 'completed') {
-            setResults(results || [])
-            setSummary(summary)
-            setIsRunning(false)
-            return true
-          } else if (job.status === 'failed') {
-            throw new Error('Job failed to complete')
-          } else {
-            // Check for timeout
-            if (Date.now() - startTime > maxPollTime) {
-              throw new Error('Polling timeout - job taking too long')
-            }
-            
-            // Update progress
-            const progress = Math.round((job.completedUrls / job.totalUrls) * 100)
-            setProgress(progress)
-            // Wait before polling again
-            await new Promise(resolve => setTimeout(resolve, 2000))
-          }
-        }
+      const currentJobId = data.jobId || jobId
+      setJobId(currentJobId)
+      
+      if (currentJobId) {
+        await pollForCompletion(currentJobId)
       }
-
-      await pollForCompletion()
-
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
       setIsRunning(false)
@@ -229,7 +363,7 @@ export default function Home() {
                 <Label htmlFor="jobName">Job Name (Optional)</Label>
                 <Input
                   id="jobName"
-                  value={jobName}
+                  value={jobName || ''}
                   onChange={(e) => setJobName(e.target.value)}
                   placeholder="My Website Migration"
                 />
@@ -238,7 +372,7 @@ export default function Home() {
                 <Label htmlFor="newDomain">New Domain</Label>
                 <Input
                   id="newDomain"
-                  value={newDomain}
+                  value={newDomain || ''}
                   onChange={(e) => setNewDomain(e.target.value)}
                   placeholder="https://newsite.com"
                 />
@@ -249,7 +383,7 @@ export default function Home() {
               <Label htmlFor="sourceUrls">Source URLs (one per line)</Label>
               <Textarea
                 id="sourceUrls"
-                value={sourceUrls}
+                value={sourceUrls || ''}
                 onChange={(e) => setSourceUrls(e.target.value)}
                 placeholder="https://oldsite.com/
 https://oldsite.com/about
@@ -279,8 +413,8 @@ https://oldsite.com/products/item1"
                   type="number"
                   min="1"
                   max="50"
-                  value={maxConcurrency}
-                  onChange={(e) => setMaxConcurrency(Number(e.target.value))}
+                  value={maxConcurrency || ''}
+                  onChange={(e) => setMaxConcurrency(Number(e.target.value) || 0)}
                 />
               </div>
               <div className="space-y-2">
@@ -290,8 +424,8 @@ https://oldsite.com/products/item1"
                   type="number"
                   min="0"
                   max="10"
-                  value={retryAttempts}
-                  onChange={(e) => setRetryAttempts(Number(e.target.value))}
+                  value={retryAttempts || ''}
+                  onChange={(e) => setRetryAttempts(Number(e.target.value) || 0)}
                 />
               </div>
               <div className="space-y-2">
@@ -301,8 +435,8 @@ https://oldsite.com/products/item1"
                   type="number"
                   min="1"
                   max="60"
-                  value={timeoutSeconds}
-                  onChange={(e) => setTimeoutSeconds(Number(e.target.value))}
+                  value={timeoutSeconds || ''}
+                  onChange={(e) => setTimeoutSeconds(Number(e.target.value) || 0)}
                 />
               </div>
             </div>
@@ -315,22 +449,26 @@ https://oldsite.com/products/item1"
             )}
 
             <div className="flex items-center space-x-4">
-              <Button
-                onClick={runComparison}
-                disabled={isRunning}
-                className="flex items-center gap-2"
+              <Button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  runComparison(true);
+                }}
+                disabled={isRunning || !jobId}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
-                {isRunning ? (
-                  <>
-                    <Pause className="h-4 w-4" />
-                    Running...
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-4 w-4" />
-                    Start Comparison
-                  </>
-                )}
+                {isRunning ? 'Processing...' : 'Rerun Comparison'}
+              </Button>
+              
+              <Button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  runComparison(false);
+                }}
+                disabled={isRunning}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                Start New Comparison
               </Button>
 
               {results.length > 0 && (
