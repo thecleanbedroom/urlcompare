@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -30,7 +30,7 @@ interface JobSummary {
   error: number
 }
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams()
   const [sourceUrls, setSourceUrls] = useState('')
   const [newDomain, setNewDomain] = useState('')
@@ -572,4 +572,16 @@ https://oldsite.com/products/item1"
       </div>
     </div>
   )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
+  );
 }

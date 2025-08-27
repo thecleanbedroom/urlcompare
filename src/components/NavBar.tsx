@@ -5,8 +5,7 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-export function NavBar() {
-  const [isMounted, setIsMounted] = useState(false);
+function NavBarContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   
@@ -15,13 +14,7 @@ export function NavBar() {
     { name: 'Job History', href: '/jobs', matchExact: true },
   ];
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   const isActive = (href: string, matchExact: boolean) => {
-    if (!isMounted) return false;
-    
     // For the home page, we want to show it as active for both '/' and '/?jobId=...'
     if (href === '/') {
       return pathname === '/';
@@ -32,11 +25,9 @@ export function NavBar() {
   };
 
   return (
-    <nav className="border-b bg-background">
-      <div className="max-w-4xl mx-auto px-4 py-3">
-        <div className="flex items-center space-x-8">
-          <h1 className="text-xl font-bold">URL Compare</h1>
-          <div className="flex space-x-1">
+    <div className="flex items-center space-x-8">
+      <h1 className="text-xl font-bold">URL Compare</h1>
+      <div className="flex space-x-1">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -51,8 +42,16 @@ export function NavBar() {
                 {item.name}
               </Link>
             ))}
-          </div>
-        </div>
+      </div>
+    </div>
+  );
+}
+
+export function NavBar() {
+  return (
+    <nav className="border-b bg-background">
+      <div className="max-w-4xl mx-auto px-4 py-3">
+        <NavBarContent />
       </div>
     </nav>
   );
