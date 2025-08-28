@@ -1,43 +1,36 @@
-FROM node:20-alpine AS builder
+FROM node:20-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Copy package files and install dependencies
 COPY package*.json ./
 COPY prisma ./prisma/
-RUN npm ci
 
-# Copy source code and build
+# Install dependencies
+RUN npm install
+
+# Copy source code
 COPY . .
+
+# Build the application
 RUN npm run build
 
-# Production stage
-FROM node:20-alpine AS runner
+# Create necessary directories
+RUN mkdir -p /app/.next/cache /app/db
 
-WORKDIR /app
-
+# Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-
-# Install production dependencies
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/prisma ./prisma
-RUN npm ci --only=production
-
-# Copy the standalone output from the builder
-COPY --from=builder /app/next.config.js ./
-COPY --from=builder /app/next.config.ts ./
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-
-# Create a start script
-RUN echo '#!/bin/sh\n\
-npx prisma migrate deploy\nnode server.js' > /app/start.sh && chmod +x /app/start.sh
+ENV DATABASE_URL=file:./db/custom.db
 
 # Expose the port the app runs on
 EXPOSE 3000
 
-# Run the application
-CMD ["/app/start.sh"]
+# Start the application
+CMD ["sh", "-c", "npm run migrate && npm start"]

@@ -1,33 +1,26 @@
-#!/bin/bash
-
-# Stop on error
+#!/bin/sh
 set -e
 
 echo "🚀 Starting URL Compare application..."
 
-# Install dependencies if node_modules doesn't exist
-if [ ! -d "node_modules" ]; then
-    echo "📦 Installing dependencies..."
-    npm install
+# Change to the app directory
+cd /app
+
+# Create database directory if it doesn't exist
+mkdir -p /app/db
+
+# Run database migrations if needed
+if [ -f "prisma/migrations" ]; then
+    echo "🔄 Running database migrations..."
+    npx prisma migrate deploy
 fi
 
-# Check if .env file exists
-if [ ! -f ".env" ]; then
-    echo "⚠️  Warning: .env file not found. Please create one based on .env.example"
-fi
-
-# Run database migrations
-echo "🔄 Running database migrations..."
-npm run db:push
-
-# Generate Prisma client
+# Generate Prisma client if needed
 if [ ! -d "node_modules/.prisma" ]; then
     echo "⚙️  Generating Prisma client..."
-    npm run db:generate
+    npx prisma generate
 fi
 
-# Start the development server
-echo "🚀 Starting development server..."
-npm run dev
-
-echo "✅ Application started successfully! Access it at http://localhost:3000"
+# Start the application
+echo "🚀 Starting Next.js server..."
+exec npm start
