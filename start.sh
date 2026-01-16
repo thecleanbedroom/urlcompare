@@ -9,17 +9,13 @@ cd /app
 # Create database directory if it doesn't exist
 mkdir -p /app/db
 
-# Run database migrations if needed
-if [ -f "prisma/migrations" ]; then
-    echo "🔄 Running database migrations..."
-    npx prisma migrate deploy
-fi
+# Sync database schema
+echo "🔄 Syncing database schema..."
+npx prisma db push
 
-# Generate Prisma client if needed
-if [ ! -d "node_modules/.prisma" ]; then
-    echo "⚙️  Generating Prisma client..."
-    npx prisma generate
-fi
+# Generate Prisma client
+echo "⚙️  Generating Prisma client..."
+npx prisma generate
 
 # Start the application
 echo "🚀 Starting Next.js server..."
