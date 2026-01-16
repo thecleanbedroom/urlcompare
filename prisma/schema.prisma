@@ -43,6 +43,34 @@ model ComparisonJob {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   urlResults  UrlResult[]
+  crawlJobs   CrawlJob[]  // Crawl jobs that led to this comparison
+}
+
+model CrawlJob {
+  id              String    @id @default(cuid())
+  name            String?
+  sourceDomain    String              // Base domain to crawl (e.g., https://oldsite.com)
+  status          String    @default("pending") // pending, crawling, completed, failed, cancelled
+  maxPages        Int       @default(500)       // Maximum pages to crawl
+  maxDepth        Int       @default(10)        // Maximum link depth from start
+  delayMs         Int       @default(200)       // Delay between requests
+  includePatterns String?             // JSON array of URL patterns to include
+  excludePatterns String?             // JSON array of URL patterns to exclude
+  discoveredUrls  String?             // JSON array of discovered URLs
+  totalDiscovered Int       @default(0)
+  pagesVisited    Int       @default(0)
+  errorCount      Int       @default(0)
+  lastError       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  completedAt     DateTime?
+
+  // Optional: Link to a comparison job if user proceeds with comparison
+  comparisonJobId String?
+  comparisonJob   ComparisonJob? @relation(fields: [comparisonJobId], references: [id])
+
+  @@index([status])
+  @@index([createdAt])
 }
 
 model UrlResult {

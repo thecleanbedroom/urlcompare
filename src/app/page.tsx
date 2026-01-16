@@ -10,7 +10,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Download, Play, Pause, AlertCircle, CheckCircle, XCircle } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Download, Play, Pause, AlertCircle, CheckCircle, XCircle, Globe, FileText } from 'lucide-react'
+import { CrawlForm } from '@/components/CrawlForm'
 
 interface UrlResult {
   sourceUrl: string
@@ -46,6 +48,13 @@ function HomeContent() {
   const [progress, setProgress] = useState(0)
   const [jobId, setJobId] = useState<string | null>(null)
   const [isLoadingJob, setIsLoadingJob] = useState(false)
+  const [activeTab, setActiveTab] = useState('manual')
+
+  // Handle crawl completion - switch to manual tab and populate URLs
+  const handleCrawlComplete = (urls: string[]) => {
+    setSourceUrls(urls.join('\n'));
+    setActiveTab('manual');
+  };
 
   const parseUrls = (text: string): string[] => {
     return text
@@ -60,49 +69,49 @@ function HomeContent() {
 
     const loadJob = async (id: string) => {
       if (!isMounted) return;
-      
+
       try {
         setIsLoadingJob(true);
         setError(null);
         console.log('1. Fetching job with ID:', id);
         const response = await fetch(`/api/comparison?jobId=${id}`);
         console.log('2. Response status:', response.status);
-        
+
         if (!response.ok) {
           const errorText = await response.text();
           console.error('3. Error response:', errorText);
           throw new Error(`Failed to load job: ${response.status} ${response.statusText}`);
         }
-        
+
         const responseData = await response.json();
         console.log('4. Job data loaded:', responseData);
-        
+
         if (!isMounted) {
           console.log('5. Component unmounted, aborting');
           return;
         }
-        
+
         // The API returns the job in a 'job' property
         const job = responseData.job;
         if (!job) {
           throw new Error('Invalid job data received from server');
         }
-        
+
         // Parse sourceUrls from the job data
-        const sourceUrls = typeof job.sourceUrls === 'string' 
-          ? JSON.parse(job.sourceUrls) 
+        const sourceUrls = typeof job.sourceUrls === 'string'
+          ? JSON.parse(job.sourceUrls)
           : job.sourceUrls || [];
-          
-        const urls = Array.isArray(sourceUrls) 
+
+        const urls = Array.isArray(sourceUrls)
           ? sourceUrls.join('\n')
           : '';
-        
+
         console.log('6. Setting form state with job data');
         setSourceUrls(urls);
         setNewDomain(job.newDomain);
         setJobName(job.name || '');
         setJobId(job.id);
-        
+
         if (job.status === 'completed') {
           console.log('7. Job is completed, setting results');
           setResults(responseData.results || []);
@@ -153,7 +162,7 @@ function HomeContent() {
 
     // Create a controller to handle cleanup
     const controller = new AbortController();
-    
+
     try {
       while (!isCancelled) {
         console.log('Polling job status for ID:', jobId);
@@ -161,7 +170,7 @@ function HomeContent() {
           signal: controller.signal,
           cache: 'no-store' // Prevent caching of the poll request
         });
-        
+
         if (!pollResponse.ok) {
           const errorText = await pollResponse.text();
           console.error('Error polling job status:', pollResponse.status, errorText);
@@ -170,11 +179,11 @@ function HomeContent() {
 
         const pollData = await pollResponse.json();
         console.log('Poll response data:', pollData);
-        
+
         if (!pollData.job) {
           throw new Error('Invalid job data received during polling');
         }
-        
+
         const { job, summary, results } = pollData;
 
         if (job.status === 'completed') {
@@ -191,15 +200,15 @@ function HomeContent() {
           if (Date.now() - startTime > maxPollTime) {
             throw new Error('Polling timeout - job taking too long');
           }
-          
+
           // Update progress
-          const progress = job.totalUrls > 0 
-            ? Math.round((job.completedUrls / job.totalUrls) * 100) 
+          const progress = job.totalUrls > 0
+            ? Math.round((job.completedUrls / job.totalUrls) * 100)
             : 0;
-            
+
           console.log(`Job progress: ${progress}% (${job.completedUrls}/${job.totalUrls})`);
           setProgress(progress);
-          
+
           // Wait before polling again with a way to cancel
           await new Promise((resolve) => {
             const timeoutId = setTimeout(resolve, 2000);
@@ -228,17 +237,17 @@ function HomeContent() {
 
     setIsRunning(true)
     setError(null)
-    
+
     setResults([])
     setSummary(null)
     setProgress(0)
 
     const urls = parseUrls(sourceUrls)
-    
+
     try {
       const url = '/api/comparison'
       const method = 'POST'
-      
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -255,7 +264,7 @@ function HomeContent() {
       const data = await response.json()
       const currentJobId = data.jobId || jobId
       setJobId(currentJobId)
-      
+
       if (currentJobId) {
         await pollForCompletion(currentJobId)
       }
@@ -349,143 +358,162 @@ function HomeContent() {
           <CardHeader>
             <CardTitle>Configuration</CardTitle>
             <CardDescription>
-              Enter your source URLs and new domain to start the comparison
+              Enter source URLs manually or scan a domain to discover URLs automatically
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="jobName">Job Name (Optional)</Label>
-                <Input
-                  id="jobName"
-                  value={jobName || ''}
-                  onChange={(e) => setJobName(e.target.value)}
-                  placeholder="My Website Migration"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="newDomain">New Domain</Label>
-                <Input
-                  id="newDomain"
-                  value={newDomain || ''}
-                  onChange={(e) => setNewDomain(e.target.value)}
-                  placeholder="https://newsite.com"
-                />
-              </div>
-            </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="manual" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Manual URLs
+                </TabsTrigger>
+                <TabsTrigger value="scan" className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Scan Domain
+                </TabsTrigger>
+              </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="sourceUrls">Source URLs (one per line)</Label>
-              <Textarea
-                id="sourceUrls"
-                value={sourceUrls || ''}
-                onChange={(e) => setSourceUrls(e.target.value)}
-                placeholder="https://oldsite.com/
+              <TabsContent value="scan" className="pt-4">
+                <CrawlForm onComplete={handleCrawlComplete} />
+              </TabsContent>
+
+              <TabsContent value="manual" className="pt-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="jobName">Job Name (Optional)</Label>
+                    <Input
+                      id="jobName"
+                      value={jobName || ''}
+                      onChange={(e) => setJobName(e.target.value)}
+                      placeholder="My Website Migration"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="newDomain">New Domain</Label>
+                    <Input
+                      id="newDomain"
+                      value={newDomain || ''}
+                      onChange={(e) => setNewDomain(e.target.value)}
+                      placeholder="https://newsite.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="sourceUrls">Source URLs (one per line)</Label>
+                  <Textarea
+                    id="sourceUrls"
+                    value={sourceUrls || ''}
+                    onChange={(e) => setSourceUrls(e.target.value)}
+                    placeholder="https://oldsite.com/
 https://oldsite.com/about
 https://oldsite.com/products/item1"
-                className="min-h-[120px]"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="followRedirects">Follow Redirects</Label>
-                <div className="flex items-center space-x-2">
-                  <input
-                    id="followRedirects"
-                    type="checkbox"
-                    checked={followRedirects}
-                    onChange={(e) => setFollowRedirects(e.target.checked)}
-                    className="rounded"
+                    className="min-h-[120px]"
                   />
-                  <span className="text-sm">{followRedirects ? 'Enabled' : 'Disabled'}</span>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="maxConcurrency">Max Concurrency</Label>
-                <Input
-                  id="maxConcurrency"
-                  type="number"
-                  min="1"
-                  max="50"
-                  value={maxConcurrency || ''}
-                  onChange={(e) => setMaxConcurrency(Number(e.target.value) || 0)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="retryAttempts">Retry Attempts</Label>
-                <Input
-                  id="retryAttempts"
-                  type="number"
-                  min="0"
-                  max="10"
-                  value={retryAttempts || ''}
-                  onChange={(e) => setRetryAttempts(Number(e.target.value) || 0)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="timeoutSeconds">Timeout (seconds)</Label>
-                <Input
-                  id="timeoutSeconds"
-                  type="number"
-                  min="1"
-                  max="60"
-                  value={timeoutSeconds || ''}
-                  onChange={(e) => setTimeoutSeconds(Number(e.target.value) || 0)}
-                />
-              </div>
-            </div>
 
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="followRedirects">Follow Redirects</Label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        id="followRedirects"
+                        type="checkbox"
+                        checked={followRedirects}
+                        onChange={(e) => setFollowRedirects(e.target.checked)}
+                        className="rounded"
+                      />
+                      <span className="text-sm">{followRedirects ? 'Enabled' : 'Disabled'}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="maxConcurrency">Max Concurrency</Label>
+                    <Input
+                      id="maxConcurrency"
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={maxConcurrency || ''}
+                      onChange={(e) => setMaxConcurrency(Number(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="retryAttempts">Retry Attempts</Label>
+                    <Input
+                      id="retryAttempts"
+                      type="number"
+                      min="0"
+                      max="10"
+                      value={retryAttempts || ''}
+                      onChange={(e) => setRetryAttempts(Number(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="timeoutSeconds">Timeout (seconds)</Label>
+                    <Input
+                      id="timeoutSeconds"
+                      type="number"
+                      min="1"
+                      max="60"
+                      value={timeoutSeconds || ''}
+                      onChange={(e) => setTimeoutSeconds(Number(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
 
-            <div className="flex items-center space-x-4">
-              <Button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  runComparison();
-                }}
-                disabled={isRunning}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                Start Comparison
-              </Button>
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
 
-              {results.length > 0 && (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-4">
                   <Button
-                    variant="outline"
-                    onClick={() => exportResults('csv')}
-                    className="flex items-center gap-2"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      runComparison();
+                    }}
+                    disabled={isRunning}
+                    className="bg-green-600 hover:bg-green-700 text-white"
                   >
-                    <Download className="h-4 w-4" />
-                    Export CSV
+                    Start Comparison
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => exportResults('json')}
-                    className="flex items-center gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    Export JSON
-                  </Button>
-                </div>
-              )}
-            </div>
 
-            {isRunning && progress > 0 && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Progress</span>
-                  <span>{progress}%</span>
+                  {results.length > 0 && (
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => exportResults('csv')}
+                        className="flex items-center gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        Export CSV
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => exportResults('json')}
+                        className="flex items-center gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        Export JSON
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                <Progress value={progress} />
-              </div>
-            )}
+
+                {isRunning && progress > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Progress</span>
+                      <span>{progress}%</span>
+                    </div>
+                    <Progress value={progress} />
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
