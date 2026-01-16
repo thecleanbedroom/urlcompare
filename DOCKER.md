@@ -102,6 +102,129 @@ const nextConfig: NextConfig = {
 export default nextConfig;
 ```
 
+## Deployment Instructions
+
+### Prerequisites
+- Docker and Docker Compose installed on your system
+- Node.js and npm (for local development)
+
+### Building and Running
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd urlCompare
+   ```
+
+2. **Build and start the application**
+   ```bash
+   # Clean up any existing containers and volumes
+   docker compose down -v
+   
+   # Create database directory
+   mkdir -p db
+   
+   # Build and start the containers
+   docker compose up --build -d
+   ```
+
+3. **View logs**
+   ```bash
+   docker compose logs -f
+   ```
+
+4. **Access the application**
+   Open your browser and navigate to: http://localhost:3000
+
+### Environment Variables
+
+The following environment variables can be configured:
+
+- `NODE_ENV`: Application environment (default: production)
+- `PORT`: Port to run the application on (default: 3000)
+- `HOSTNAME`: Hostname to bind to (default: 0.0.0.0)
+- `DATABASE_URL`: Database connection string (default: file:./db/custom.db)
+
+### Database Management
+
+#### Running Migrations
+Migrations are automatically applied when the container starts. To manually run migrations:
+
+```bash
+docker compose exec app npx prisma migrate deploy
+```
+
+#### Accessing the Database
+To access the SQLite database:
+
+```bash
+# Install SQLite tools
+sudo apt-get install sqlite3
+
+# Connect to the database
+sqlite3 db/custom.db
+```
+
+### Maintenance
+
+#### Updating Dependencies
+1. Stop the containers:
+   ```bash
+   docker compose down
+   ```
+2. Update dependencies in `package.json`
+3. Rebuild the containers:
+   ```bash
+   docker compose up --build -d
+   ```
+
+#### Backing Up the Database
+```bash
+# Create a backup
+cp db/custom.db db/backup-$(date +%Y%m%d).db
+
+# Restore from backup
+cp db/backup-<date>.db db/custom.db
+```
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **Permission Issues**
+   If you encounter permission issues with the database:
+   ```bash
+   sudo chown -R $USER:$USER db/
+   ```
+
+2. **Port Already in Use**
+   If port 3000 is already in use, either stop the conflicting service or change the port in `docker-compose.yml`.
+
+3. **Database Migration Failures**
+   If migrations fail, try resetting the database:
+   ```bash
+   docker compose down -v
+   rm -rf db/
+   mkdir -p db
+   docker compose up --build -d
+   ```
+
+### Production Considerations
+
+1. **Security**
+   - Use environment variables for sensitive data
+   - Enable HTTPS with a reverse proxy like Nginx
+   - Regularly update dependencies for security patches
+
+2. **Performance**
+   - Consider using a more robust database like PostgreSQL for production
+   - Configure appropriate resource limits in `docker-compose.yml`
+
+3. **Monitoring**
+   - Set up logging and monitoring
+   - Consider using a process manager like PM2 for better reliability
+```
+
 ## Important Notes
 
 1. **Environment Variables**:
