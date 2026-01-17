@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import {
+  checkUrlStatus,
+  extractPath,
+  constructNewUrl,
+  type ComparisonResult
+} from '@/lib/urlChecker'
 
 interface ComparisonRequest {
   sourceUrls: string[]
@@ -13,22 +19,10 @@ interface ComparisonRequest {
   name?: string
 }
 
-interface ComparisonResult {
-  sourceUrl: string
-  newUrl: string
-  statusCode: number | null
-  redirectChain: string[]
-  finalUrl: string | null
-  result: 'OK' | 'Missing' | 'Error' | 'Redirected'
-  error?: string
-  retryCount: number
-  checkedAt: string
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body: ComparisonRequest = await request.json()
-    
+
     const {
       sourceUrls,
       newDomain,
@@ -179,19 +173,17 @@ async function processComparisonJob(
     // Process URLs in batches
     for (let i = 0; i < sourceUrls.length; i += maxConcurrency) {
       const batch = sourceUrls.slice(i, i + maxConcurrency)
-      
+
       const batchPromises = batch.map(async (sourceUrl) => {
         try {
           const result = await checkUrlStatus(
             sourceUrl,
             newDomain,
-            followRedirects,
-            retryAttempts,
-            timeoutSeconds
+            { followRedirects, retryAttempts, timeoutSeconds }
           )
           return result
         } catch (err) {
-          return {
+          const errorResult: ComparisonResult = {
             sourceUrl,
             newUrl: constructNewUrl(extractPath(sourceUrl), newDomain),
             statusCode: null,
@@ -202,12 +194,13 @@ async function processComparisonJob(
             retryCount: retryAttempts,
             checkedAt: new Date().toISOString()
           }
+          return errorResult
         }
       })
 
       const batchResults = await Promise.all(batchPromises)
       results.push(...batchResults)
-      
+
       // Save results to database
       await db.urlResult.createMany({
         data: batchResults.map(result => ({
@@ -225,7 +218,7 @@ async function processComparisonJob(
       })
 
       completed += batch.length
-      
+
       // Update progress
       await db.comparisonJob.update({
         where: { id: jobId },
@@ -251,113 +244,7 @@ async function processComparisonJob(
   }
 }
 
-async function checkUrlStatus(
-  sourceUrl: string,
-  newDomain: string,
-  followRedirects: boolean,
-  retryAttempts: number,
-  timeoutSeconds: number
-): Promise<ComparisonResult> {
-  const extractPath = (url: string): string => {
-    try {
-      const urlObj = new URL(url)
-      return urlObj.pathname + urlObj.search + urlObj.hash
-    } catch {
-      return '/'
-    }
-  }
 
-  const constructNewUrl = (path: string, domain: string): string => {
-    return domain.replace(/\/$/, '') + path
-  }
-
-  let retryCount = 0
-  let lastError: string | undefined
-
-  while (retryCount < retryAttempts) {
-    try {
-      const path = extractPath(sourceUrl)
-      const newUrl = constructNewUrl(path, newDomain)
-
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), timeoutSeconds * 1000)
-
-      const response = await fetch(newUrl, {
-        method: 'GET',
-        signal: controller.signal,
-        redirect: followRedirects ? 'follow' : 'manual'
-      })
-
-      clearTimeout(timeoutId)
-
-      const redirectChain: string[] = []
-      let finalUrl = newUrl
-
-      if (response.redirected) {
-        const finalResponse = await fetch(newUrl, {
-          method: 'GET',
-          redirect: 'manual'
-        })
-        
-        if (finalResponse.status === 301 || finalResponse.status === 302 || finalResponse.status === 307 || finalResponse.status === 308) {
-          const location = finalResponse.headers.get('location')
-          if (location) {
-            redirectChain.push(location)
-            finalUrl = location
-          }
-        }
-      }
-
-      let result: 'OK' | 'Missing' | 'Error' | 'Redirected' = 'OK'
-      if (response.status === 404) result = 'Missing'
-      if (response.status >= 400) result = 'Error'
-      if (redirectChain.length > 0) result = 'Redirected'
-
-      return {
-        sourceUrl,
-        newUrl,
-        statusCode: response.status,
-        redirectChain,
-        finalUrl,
-        result,
-        retryCount,
-        checkedAt: new Date().toISOString()
-      }
-
-    } catch (err) {
-      retryCount++
-      lastError = err instanceof Error ? err.message : 'Unknown error'
-      
-      if (retryCount >= retryAttempts) {
-        return {
-          sourceUrl,
-          newUrl: constructNewUrl(extractPath(sourceUrl), newDomain),
-          statusCode: null,
-          redirectChain: [],
-          finalUrl: null,
-          result: 'Error',
-          error: lastError,
-          retryCount,
-          checkedAt: new Date().toISOString()
-        }
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 1000 * retryCount))
-    }
-  }
-
-  return {
-    sourceUrl,
-    newUrl: constructNewUrl(extractPath(sourceUrl), newDomain),
-    statusCode: null,
-    redirectChain: [],
-    finalUrl: null,
-    result: 'Error',
-    error: lastError,
-    retryCount,
-    checkedAt: new Date().toISOString()
-  }
-}
 
 function generateSummary(results: any[]) {
   return {

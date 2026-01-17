@@ -11,10 +11,11 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Download, Play, Pause, AlertCircle, CheckCircle, XCircle, Globe, FileText } from 'lucide-react'
+import { Download, Play, Pause, AlertCircle, CheckCircle, XCircle, Globe, FileText, Maximize2, Minimize2 } from 'lucide-react'
 import { CrawlForm } from '@/components/CrawlForm'
-
+import { ResultCard } from '@/components/ResultCard'
 interface UrlResult {
+  id?: string
   sourceUrl: string
   newUrl: string
   statusCode: number | null
@@ -49,6 +50,10 @@ function HomeContent() {
   const [jobId, setJobId] = useState<string | null>(null)
   const [isLoadingJob, setIsLoadingJob] = useState(false)
   const [activeTab, setActiveTab] = useState('manual')
+  const [retryingIds, setRetryingIds] = useState<Set<string>>(new Set())
+  const [statusFilter, setStatusFilter] = useState<'all' | 'ok' | 'redirected' | 'not-found'>('all')
+  const [pathFilter, setPathFilter] = useState('')
+  const [isResultsExpanded, setIsResultsExpanded] = useState(false)
 
   // Handle crawl completion - switch to manual tab and populate URLs
   const handleCrawlComplete = (urls: string[]) => {
@@ -329,19 +334,90 @@ function HomeContent() {
   }
 
   const getStatusBadge = (result: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-      OK: 'default',
+    const variants: Record<string, 'success' | 'warning' | 'destructive' | 'secondary'> = {
+      OK: 'success',
       Missing: 'destructive',
       Error: 'destructive',
-      Redirected: 'secondary'
+      Redirected: 'warning'
+    }
+
+    const labels: Record<string, string> = {
+      OK: 'OK',
+      Redirected: 'Redirected',
+      Missing: 'Not Found',
+      Error: 'Not Found'
     }
 
     return (
-      <Badge variant={variants[result] || 'default'} className="flex items-center gap-1">
+      <Badge variant={variants[result] || 'secondary'} className="flex items-center gap-1">
         {getStatusIcon(result)}
-        {result}
+        {labels[result] || result}
       </Badge>
     )
+  }
+
+  const retryVerification = async (result: UrlResult) => {
+    if (!result.id) {
+      console.error('Cannot retry result without ID')
+      return
+    }
+
+    const resultId = result.id
+    setRetryingIds(prev => new Set(prev).add(resultId))
+
+    try {
+      const response = await fetch('/api/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resultId: resultId,
+          sourceUrl: result.sourceUrl,
+          newDomain: newDomain
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to verify URL')
+      }
+
+      const updatedResult = await response.json()
+
+      // Update results in-place
+      setResults(prev => prev.map(r =>
+        r.id === resultId ? { ...r, ...updatedResult } : r
+      ))
+
+      // Update summary counts
+      if (summary) {
+        const oldResult = result.result
+        const newResult = updatedResult.result
+        if (oldResult !== newResult) {
+          setSummary(prev => {
+            if (!prev) return prev
+            const updated = { ...prev }
+            // Decrement old status count
+            if (oldResult === 'OK') updated.ok--
+            else if (oldResult === 'Missing') updated.missing--
+            else if (oldResult === 'Error') updated.error--
+            else if (oldResult === 'Redirected') updated.redirected--
+            // Increment new status count
+            if (newResult === 'OK') updated.ok++
+            else if (newResult === 'Missing') updated.missing++
+            else if (newResult === 'Error') updated.error++
+            else if (newResult === 'Redirected') updated.redirected++
+            return updated
+          })
+        }
+      }
+    } catch (err) {
+      console.error('Error retrying verification:', err)
+    } finally {
+      setRetryingIds(prev => {
+        const next = new Set(prev)
+        next.delete(resultId)
+        return next
+      })
+    }
   }
 
   return (
@@ -550,49 +626,97 @@ https://oldsite.com/products/item1"
         )}
 
         {results.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Results</CardTitle>
-              <CardDescription>
-                Detailed results for each URL check
-              </CardDescription>
+          <Card className={isResultsExpanded ? 'fixed inset-0 z-50 rounded-none overflow-auto' : ''}>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Results</CardTitle>
+                <CardDescription>
+                  Detailed results for each URL check
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsResultsExpanded(!isResultsExpanded)}
+                className="flex items-center gap-2"
+              >
+                {isResultsExpanded ? (
+                  <><Minimize2 className="h-4 w-4" /> Exit Fullscreen</>
+                ) : (
+                  <><Maximize2 className="h-4 w-4" /> Fullscreen</>
+                )}
+              </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {results.map((result, index) => (
-                  <div key={index} className="border rounded-lg p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        {getStatusBadge(result.result)}
-                        <span className="font-medium">{result.sourceUrl}</span>
-                      </div>
-                      {result.statusCode && (
-                        <Badge variant="outline">{result.statusCode}</Badge>
-                      )}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      <div>New URL: {result.newUrl}</div>
-                      {result.finalUrl && result.finalUrl !== result.newUrl && (
-                        <div>Final URL: {result.finalUrl}</div>
-                      )}
-                      {result.redirectChain && (
-                        (() => {
-                          try {
-                            const chain = typeof result.redirectChain === 'string' ? JSON.parse(result.redirectChain) : result.redirectChain;
-                            return Array.isArray(chain) && chain.length > 0 ? (
-                              <div>Redirect Chain: {chain.join(' → ')}</div>
-                            ) : null;
-                          } catch {
-                            return null;
-                          }
-                        })()
-                      )}
-                      {result.error && (
-                        <div className="text-red-600">Error: {result.error}</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+              {/* Filter buttons */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                <Button
+                  variant={statusFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('all')}
+                >
+                  All ({results.length})
+                </Button>
+                <Button
+                  variant={statusFilter === 'ok' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('ok')}
+                  className={statusFilter === 'ok' ? 'bg-green-600 hover:bg-green-700' : ''}
+                >
+                  OK ({results.filter(r => r.result === 'OK').length})
+                </Button>
+                <Button
+                  variant={statusFilter === 'redirected' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('redirected')}
+                  className={statusFilter === 'redirected' ? 'bg-yellow-600 hover:bg-yellow-700' : ''}
+                >
+                  Redirected ({results.filter(r => r.result === 'Redirected').length})
+                </Button>
+                <Button
+                  variant={statusFilter === 'not-found' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('not-found')}
+                  className={statusFilter === 'not-found' ? 'bg-red-600 hover:bg-red-700' : ''}
+                >
+                  Not Found ({results.filter(r => r.result === 'Missing' || r.result === 'Error').length})
+                </Button>
+              </div>
+
+              {/* Path search filter */}
+              <div className="mb-4">
+                <Input
+                  placeholder="Filter by path... (e.g. 'bed' matches '/bedroom', '/beds')"
+                  value={pathFilter}
+                  onChange={(e) => setPathFilter(e.target.value)}
+                  className="max-w-md"
+                />
+              </div>
+
+              <div className={`space-y-4 overflow-y-auto ${isResultsExpanded ? 'max-h-[calc(100vh-280px)]' : 'max-h-96'}`}>
+                {results
+                  .filter(result => {
+                    // Status filter
+                    let statusMatch = true
+                    if (statusFilter === 'ok') statusMatch = result.result === 'OK'
+                    else if (statusFilter === 'redirected') statusMatch = result.result === 'Redirected'
+                    else if (statusFilter === 'not-found') statusMatch = result.result === 'Missing' || result.result === 'Error'
+
+                    // Path filter (case-insensitive)
+                    const pathMatch = pathFilter === '' ||
+                      result.sourceUrl.toLowerCase().includes(pathFilter.toLowerCase()) ||
+                      result.newUrl.toLowerCase().includes(pathFilter.toLowerCase())
+
+                    return statusMatch && pathMatch
+                  })
+                  .map((result, index) => (
+                    <ResultCard
+                      key={result.id || index}
+                      result={result}
+                      onRetry={retryVerification}
+                      isRetrying={retryingIds.has(result.id || '')}
+                    />
+                  ))}
               </div>
             </CardContent>
           </Card>

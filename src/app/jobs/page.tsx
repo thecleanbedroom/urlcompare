@@ -75,7 +75,7 @@ function JobsContent() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-center py-12">
-                <p className="text-gray-500">No jobs found</p>
+                <p className="text-gray-500">No jobs available.</p>
                 <Button className="mt-4" asChild>
                   <a href="/">Start a new comparison</a>
                 </Button>
