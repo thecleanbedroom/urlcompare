@@ -54,11 +54,11 @@ Each task is a self-contained unit of work. Tasks within a phase should be compl
   - [x] Change `db.ts` to use `PRISMA_DEBUG === 'true'` instead of unconditional `['query']`
   - [x] Verify: start server without `PRISMA_DEBUG` set — no SQL output in stdout
 
-- [ ] **Phase 1 gate: commit & verify**
-  - [ ] `npx tsc --noEmit` passes
-  - [ ] `npm run lint` passes
-  - [ ] `npm run dev` starts without errors
-  - [ ] Git commit: `fix: XSS in HTML export, Next.js 16 params typing, SSRF protection`
+- [x] **Phase 1 gate: commit & verify**
+  - [x] `npx tsc --noEmit` passes
+  - [x] `npm run lint` passes
+  - [x] `npm run dev` starts without errors
+  - [x] Git commit: `fix: XSS in HTML export, Next.js 16 params typing, SSRF protection`
 
 ---
 
@@ -66,43 +66,43 @@ Each task is a self-contained unit of work. Tasks within a phase should be compl
 
 **Commit message:** `chore: remove dead code, fix gitignore, audit dependencies`
 
-- [ ] **2.1 — Update `.gitignore`**
-  - [ ] Append `*.log`, `dev.log`, `server.log` entries
-  - [ ] Append `prisma/db/*.db`, `prisma/db/*.db-journal` entries
-  - [ ] Run `git rm --cached dev.log server.log prisma/db/custom.db` to untrack
-  - [ ] Verify: `git status` no longer shows log/db files as tracked
+- [x] **2.1 — Update `.gitignore`**
+  - [x] Append `*.log`, `dev.log`, `server.log` entries
+  - [x] Append `prisma/db/*.db`, `prisma/db/*.db-journal` entries
+  - [x] Run `git rm --cached dev.log server.log prisma/db/custom.db` to untrack
+  - [x] Verify: `git status` no longer shows log/db files as tracked
 
-- [ ] **2.2 — Remove Unused Prisma Models**
-  - [ ] Delete `User` model from `prisma/schema.prisma`
-  - [ ] Delete `Post` model from `prisma/schema.prisma`
-  - [ ] Run `npx prisma generate`
-  - [ ] Verify: `npx prisma validate` passes
+- [x] **2.2 — Remove Unused Prisma Models**
+  - [x] Delete `User` model from `prisma/schema.prisma`
+  - [x] Delete `Post` model from `prisma/schema.prisma`
+  - [x] Run `npx prisma generate`
+  - [x] Verify: `npx prisma validate` passes
 
-- [ ] **2.3 — Remove Unused CrawlJob → ComparisonJob Relation**
-  - [ ] Remove `comparisonJobId` and `comparisonJob` from `CrawlJob` in schema
-  - [ ] Remove `crawlJobs CrawlJob[]` from `ComparisonJob` in schema
-  - [ ] Run `npx prisma db push`
-  - [ ] Verify: app starts normally
+- [x] **2.3 — Remove Unused CrawlJob → ComparisonJob Relation**
+  - [x] Remove `comparisonJobId` and `comparisonJob` from `CrawlJob` in schema
+  - [x] Remove `crawlJobs CrawlJob[]` from `ComparisonJob` in schema
+  - [x] Run `npx prisma db push`
+  - [x] Verify: app starts normally
 
-- [ ] **2.4 — Remove Socket.IO Scaffolding**
-  - [ ] Delete `src/lib/socket.ts`
-  - [ ] Edit `server.ts`: remove `socket.io` import, `Server` creation, `setupSocket()` call
-  - [ ] Edit `server.ts`: remove `/api/socketio` request filter in `createServer` callback
-  - [ ] Simplify `server.ts` to just Next.js + HTTP + upgrade handler
-  - [ ] Run `npm uninstall socket.io socket.io-client`
-  - [ ] Verify: `npm run dev` starts without errors, no WebSocket errors in browser
+- [x] **2.4 — Remove Socket.IO Scaffolding**
+  - [x] Delete `src/lib/socket.ts`
+  - [x] Edit `server.ts`: remove `socket.io` import, `Server` creation, `setupSocket()` call
+  - [x] Edit `server.ts`: remove `/api/socketio` request filter in `createServer` callback
+  - [x] Simplify `server.ts` to just Next.js + HTTP + upgrade handler
+  - [x] Run `npm uninstall socket.io socket.io-client`
+  - [x] Verify: `npm run dev` starts without errors, no WebSocket errors in browser
 
-- [ ] **2.5 — Audit & Remove Unused Dependencies**
-  - [ ] Run dependency audit script (grep for imports + check `npm ls`)
-  - [ ] For each package with 0 imports in `src/` and `src/components/ui/`:
-    - [ ] Check config files (`next.config.ts`, `tailwind.config.ts`)
-    - [ ] Check `npm ls <pkg> --depth=0` for peer dependency usage
-    - [ ] If unused everywhere: `npm uninstall <pkg>`
-  - [ ] Verify: `npm run build` succeeds after all removals
+- [x] **2.5 — Audit & Remove Unused Dependencies**
+  - [x] Run dependency audit script (grep for imports + check `npm ls`)
+  - [x] For each package with 0 imports in `src/` and `src/components/ui/`:
+    - [x] Check config files (`next.config.ts`, `tailwind.config.ts`)
+    - [x] Check `npm ls <pkg> --depth=0` for peer dependency usage
+    - [x] If unused everywhere: `npm uninstall <pkg>`
+  - [x] Verify: `npm run build` succeeds after all removals
 
-- [ ] **2.6 — Truncate Dev Log in Dev Script**
-  - [ ] Update `package.json` dev script to truncate `dev.log` on each start (`: > dev.log && ...`)
-  - [ ] Verify: restart dev server, confirm `dev.log` starts fresh
+- [x] **2.6 — Truncate Dev Log in Dev Script**
+  - [x] Update `package.json` dev script to truncate `dev.log` on each start (`: > dev.log && ...`)
+  - [x] Verify: restart dev server, confirm `dev.log` starts fresh
 
 - [ ] **Phase 2 gate: commit & verify**
   - [ ] `npm run build` succeeds

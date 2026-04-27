@@ -1,45 +1,27 @@
 import { PrismaClient } from '@prisma/client'
-import { execSync } from 'child_process'
-import { existsSync } from 'fs'
-import { join } from 'path'
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
-  dbInitialized: boolean | undefined
 }
 
-// Check if database exists and initialize if needed
-function ensureDatabaseExists() {
-  if (globalForPrisma.dbInitialized) {
-    return
+function getDatabasePath(): string {
+  // DATABASE_URL format: "file:./db/custom.db" (relative to prisma directory)
+  const url = process.env.DATABASE_URL ?? 'file:./db/database.sqlite'
+  const match = url.match(/^file:(.+)$/)
+  if (match) {
+    const relativePath = match[1]
+    // Resolve relative to the prisma directory
+    const { join } = require('path')
+    return join(process.cwd(), 'prisma', relativePath)
   }
-
-  // The database path is relative to the prisma folder
-  const dbPath = join(process.cwd(), 'prisma', 'db', 'custom.db')
-
-  if (!existsSync(dbPath)) {
-    console.log('🚀 Database not found. Initializing with prisma db push...')
-    try {
-      execSync('npx prisma db push', {
-        cwd: process.cwd(),
-        stdio: 'inherit',
-      })
-      console.log('✅ Database initialized successfully!')
-    } catch (error) {
-      console.error('❌ Failed to initialize database:', error)
-      throw error
-    }
-  }
-
-  globalForPrisma.dbInitialized = true
+  return url
 }
-
-// Ensure database exists before creating the client
-ensureDatabaseExists()
 
 export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
+    adapter: new PrismaBetterSqlite3(getDatabasePath()),
     log: process.env.PRISMA_DEBUG === 'true' ? ['query'] : [],
   })
 
