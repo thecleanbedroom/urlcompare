@@ -11,9 +11,11 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Download, Play, Pause, AlertCircle, CheckCircle, XCircle, Globe, FileText, Maximize2, Minimize2 } from 'lucide-react'
+import { Download, Play, Pause, AlertCircle, CheckCircle, XCircle, Globe, FileText, Maximize2, Minimize2, Loader2, Shield } from 'lucide-react'
 import { CrawlForm } from '@/components/CrawlForm'
 import { ResultCard } from '@/components/ResultCard'
+import { EmptyState } from '@/components/EmptyState'
+
 interface UrlResult {
   id?: string
   sourceUrl: string
@@ -42,6 +44,7 @@ function HomeContent() {
   const [maxConcurrency, setMaxConcurrency] = useState(10)
   const [retryAttempts, setRetryAttempts] = useState(3)
   const [timeoutSeconds, setTimeoutSeconds] = useState(10)
+  const [overrideToken, setOverrideToken] = useState('')
   const [results, setResults] = useState<UrlResult[]>([])
   const [summary, setSummary] = useState<JobSummary | null>(null)
   const [isRunning, setIsRunning] = useState(false)
@@ -260,7 +263,7 @@ function HomeContent() {
           sourceUrls: urls,
           newDomain,
           name: jobName || undefined,
-          config: { followRedirects, maxConcurrency, retryAttempts, timeoutSeconds },
+          config: { followRedirects, maxConcurrency, retryAttempts, timeoutSeconds, overrideToken: overrideToken.trim() || undefined },
         }),
       })
 
@@ -372,7 +375,8 @@ function HomeContent() {
         body: JSON.stringify({
           resultId: resultId,
           sourceUrl: result.sourceUrl,
-          newDomain: newDomain
+          newDomain: newDomain,
+          overrideToken: overrideToken.trim() || undefined
         })
       })
 
@@ -420,42 +424,157 @@ function HomeContent() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">URL Comparison Tool</h1>
-          <p className="text-muted-foreground">
-            Compare URLs from your old website against the new domain and check their availability
-          </p>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Configuration</CardTitle>
-            <CardDescription>
-              Enter source URLs manually or scan a domain to discover URLs automatically
-            </CardDescription>
+  // Fullscreen overlay for results
+  if (isResultsExpanded && results.length > 0) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background overflow-auto p-4">
+        <Card className="h-full">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Results</CardTitle>
+              <CardDescription>
+                Detailed results for each URL check
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportResults('csv')}
+                className="flex items-center gap-1"
+              >
+                <Download className="h-4 w-4" /> CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportResults('json')}
+                className="flex items-center gap-1"
+              >
+                <Download className="h-4 w-4" /> JSON
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsResultsExpanded(false)}
+                className="flex items-center gap-1"
+              >
+                <Minimize2 className="h-4 w-4" /> Exit Fullscreen
+              </Button>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="manual" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Manual URLs
-                </TabsTrigger>
-                <TabsTrigger value="scan" className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  Scan Domain
-                </TabsTrigger>
-              </TabsList>
+          <CardContent>
+            {/* Filter buttons */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Button
+                variant={statusFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setStatusFilter('all')}
+              >
+                All ({results.length})
+              </Button>
+              <Button
+                variant={statusFilter === 'ok' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setStatusFilter('ok')}
+                className={statusFilter === 'ok' ? 'bg-green-600 hover:bg-green-700' : ''}
+              >
+                OK ({results.filter(r => r.result === 'OK').length})
+              </Button>
+              <Button
+                variant={statusFilter === 'redirected' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setStatusFilter('redirected')}
+                className={statusFilter === 'redirected' ? 'bg-yellow-600 hover:bg-yellow-700' : ''}
+              >
+                Redirected ({results.filter(r => r.result === 'Redirected').length})
+              </Button>
+              <Button
+                variant={statusFilter === 'not-found' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setStatusFilter('not-found')}
+                className={statusFilter === 'not-found' ? 'bg-red-600 hover:bg-red-700' : ''}
+              >
+                Not Found ({results.filter(r => r.result === 'Missing' || r.result === 'Error').length})
+              </Button>
+            </div>
 
-              <TabsContent value="scan" className="pt-4">
-                <CrawlForm onComplete={handleCrawlComplete} />
-              </TabsContent>
+            {/* Path search filter */}
+            <div className="mb-4">
+              <Input
+                placeholder="Filter by path... (e.g. 'bed' matches '/bedroom', '/beds')"
+                value={pathFilter}
+                onChange={(e) => setPathFilter(e.target.value)}
+                className="max-w-md"
+              />
+            </div>
 
-              <TabsContent value="manual" className="pt-4 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-280px)]">
+              {results
+                .filter(result => {
+                  let statusMatch = true
+                  if (statusFilter === 'ok') statusMatch = result.result === 'OK'
+                  else if (statusFilter === 'redirected') statusMatch = result.result === 'Redirected'
+                  else if (statusFilter === 'not-found') statusMatch = result.result === 'Missing' || result.result === 'Error'
+
+                  const pathMatch = pathFilter === '' ||
+                    result.sourceUrl.toLowerCase().includes(pathFilter.toLowerCase()) ||
+                    result.newUrl.toLowerCase().includes(pathFilter.toLowerCase())
+
+                  return statusMatch && pathMatch
+                })
+                .map((result, index) => (
+                  <ResultCard
+                    key={result.id || index}
+                    result={result}
+                    onRetry={retryVerification}
+                    isRetrying={retryingIds.has(result.id || '')}
+                  />
+                ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen h-screen bg-background">
+      <div className="grid grid-cols-[1fr_2fr] h-full">
+        {/* Left Panel: Configuration */}
+        <aside className="border-r overflow-y-auto p-4 space-y-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight">URL Comparison Tool</h1>
+            <p className="text-sm text-muted-foreground">
+              Compare URLs from your old website against the new domain
+            </p>
+          </div>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Configuration</CardTitle>
+              <CardDescription>
+                Enter source URLs manually or scan a domain
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="manual" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Manual URLs
+                  </TabsTrigger>
+                  <TabsTrigger value="scan" className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    Scan Domain
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="scan" className="pt-4">
+                  <CrawlForm onComplete={handleCrawlComplete} overrideToken={overrideToken} />
+                </TabsContent>
+
+                <TabsContent value="manual" className="pt-4 space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="jobName">Job Name (Optional)</Label>
                     <Input
@@ -474,253 +593,290 @@ function HomeContent() {
                       placeholder="https://newsite.com"
                     />
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="sourceUrls">Source URLs (one per line)</Label>
-                  <Textarea
-                    id="sourceUrls"
-                    value={sourceUrls || ''}
-                    onChange={(e) => setSourceUrls(e.target.value)}
-                    placeholder="https://oldsite.com/
+                  <div className="space-y-2">
+                    <Label htmlFor="sourceUrls">Source URLs (one per line)</Label>
+                    <Textarea
+                      id="sourceUrls"
+                      value={sourceUrls || ''}
+                      onChange={(e) => setSourceUrls(e.target.value)}
+                      placeholder="https://oldsite.com/
 https://oldsite.com/about
 https://oldsite.com/products/item1"
-                    className="min-h-[120px]"
-                  />
-                </div>
+                      className="min-h-[120px]"
+                    />
+                  </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="followRedirects">Follow Redirects</Label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        id="followRedirects"
-                        type="checkbox"
-                        checked={followRedirects}
-                        onChange={(e) => setFollowRedirects(e.target.checked)}
-                        className="rounded"
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="followRedirects" className="text-sm">Follow Redirects</Label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          id="followRedirects"
+                          type="checkbox"
+                          checked={followRedirects}
+                          onChange={(e) => setFollowRedirects(e.target.checked)}
+                          className="rounded"
+                        />
+                        <span className="text-sm">{followRedirects ? 'Yes' : 'No'}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="maxConcurrency" className="text-sm">Max Concurrency</Label>
+                      <Input
+                        id="maxConcurrency"
+                        type="number"
+                        min="1"
+                        max="50"
+                        value={maxConcurrency || ''}
+                        onChange={(e) => setMaxConcurrency(Number(e.target.value) || 0)}
                       />
-                      <span className="text-sm">{followRedirects ? 'Enabled' : 'Disabled'}</span>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="retryAttempts" className="text-sm">Retry Attempts</Label>
+                      <Input
+                        id="retryAttempts"
+                        type="number"
+                        min="0"
+                        max="10"
+                        value={retryAttempts || ''}
+                        onChange={(e) => setRetryAttempts(Number(e.target.value) || 0)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="timeoutSeconds" className="text-sm">Timeout (sec)</Label>
+                      <Input
+                        id="timeoutSeconds"
+                        type="number"
+                        min="1"
+                        max="60"
+                        value={timeoutSeconds || ''}
+                        onChange={(e) => setTimeoutSeconds(Number(e.target.value) || 0)}
+                      />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="maxConcurrency">Max Concurrency</Label>
-                    <Input
-                      id="maxConcurrency"
-                      type="number"
-                      min="1"
-                      max="50"
-                      value={maxConcurrency || ''}
-                      onChange={(e) => setMaxConcurrency(Number(e.target.value) || 0)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="retryAttempts">Retry Attempts</Label>
-                    <Input
-                      id="retryAttempts"
-                      type="number"
-                      min="0"
-                      max="10"
-                      value={retryAttempts || ''}
-                      onChange={(e) => setRetryAttempts(Number(e.target.value) || 0)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="timeoutSeconds">Timeout (seconds)</Label>
-                    <Input
-                      id="timeoutSeconds"
-                      type="number"
-                      min="1"
-                      max="60"
-                      value={timeoutSeconds || ''}
-                      onChange={(e) => setTimeoutSeconds(Number(e.target.value) || 0)}
-                    />
-                  </div>
-                </div>
 
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
 
-                <div className="flex items-center space-x-4">
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+
                   <Button
                     onClick={(e) => {
                       e.preventDefault();
                       runComparison();
                     }}
                     disabled={isRunning}
-                    className="bg-green-600 hover:bg-green-700 text-white"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
                   >
-                    Start Comparison
+                    {isRunning ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Running...
+                      </>
+                    ) : (
+                      'Start Comparison'
+                    )}
                   </Button>
+                </TabsContent>
+              </Tabs>
 
-                  {results.length > 0 && (
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => exportResults('csv')}
-                        className="flex items-center gap-2"
-                      >
-                        <Download className="h-4 w-4" />
-                        Export CSV
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => exportResults('json')}
-                        className="flex items-center gap-2"
-                      >
-                        <Download className="h-4 w-4" />
-                        Export JSON
-                      </Button>
-                    </div>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="overrideToken" className="text-sm flex items-center gap-1">
+                  <Shield className="h-3.5 w-3.5" />
+                  Edge Override Token
+                </Label>
+                <Input
+                  id="overrideToken"
+                  type="password"
+                  value={overrideToken}
+                  onChange={(e) => setOverrideToken(e.target.value)}
+                  placeholder="Optional – bypasses Cloudflare edge redirects"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Sends <code className="text-xs">X-EdgeRedirect-Override</code> header to force redirect processing at the origin
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </aside>
 
-                {isRunning && progress > 0 && (
-                  <div className="space-y-2">
+        {/* Right Panel: Summary + Results */}
+        <main className="h-full overflow-y-auto p-4 space-y-4">
+          {/* Loading/Progress State */}
+          {isRunning && (
+            <Card>
+              <CardContent className="py-8">
+                <div className="space-y-4 text-center">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                  <p className="text-lg font-medium">Comparing URLs...</p>
+                  <div className="max-w-md mx-auto space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Progress</span>
                       <span>{progress}%</span>
                     </div>
                     <Progress value={progress} />
                   </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-
-        {summary && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{summary.totalUrls}</div>
-                  <div className="text-sm text-muted-foreground">Total URLs</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{summary.ok}</div>
-                  <div className="text-sm text-muted-foreground">OK</div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Summary Section */}
+          {summary && !isRunning && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle>Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-5 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">{summary.totalUrls}</div>
+                    <div className="text-sm text-muted-foreground">Total URLs</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">{summary.ok}</div>
+                    <div className="text-sm text-muted-foreground">OK</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">{summary.redirected}</div>
+                    <div className="text-sm text-muted-foreground">Redirected</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-red-600">{summary.missing}</div>
+                    <div className="text-sm text-muted-foreground">Missing</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-red-600">{summary.error}</div>
+                    <div className="text-sm text-muted-foreground">Errors</div>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{summary.redirected}</div>
-                  <div className="text-sm text-muted-foreground">Redirected</div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Results Section */}
+          {results.length > 0 && !isRunning && (
+            <Card className="flex-1">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div>
+                  <CardTitle>Results</CardTitle>
+                  <CardDescription>
+                    Detailed results for each URL check
+                  </CardDescription>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">{summary.missing}</div>
-                  <div className="text-sm text-muted-foreground">Missing</div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => exportResults('csv')}
+                    className="flex items-center gap-1"
+                  >
+                    <Download className="h-4 w-4" /> CSV
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => exportResults('json')}
+                    className="flex items-center gap-1"
+                  >
+                    <Download className="h-4 w-4" /> JSON
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsResultsExpanded(true)}
+                    className="flex items-center gap-1"
+                  >
+                    <Maximize2 className="h-4 w-4" /> Fullscreen
+                  </Button>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">{summary.error}</div>
-                  <div className="text-sm text-muted-foreground">Errors</div>
+              </CardHeader>
+              <CardContent>
+                {/* Filter buttons */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Button
+                    variant={statusFilter === 'all' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setStatusFilter('all')}
+                  >
+                    All ({results.length})
+                  </Button>
+                  <Button
+                    variant={statusFilter === 'ok' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setStatusFilter('ok')}
+                    className={statusFilter === 'ok' ? 'bg-green-600 hover:bg-green-700' : ''}
+                  >
+                    OK ({results.filter(r => r.result === 'OK').length})
+                  </Button>
+                  <Button
+                    variant={statusFilter === 'redirected' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setStatusFilter('redirected')}
+                    className={statusFilter === 'redirected' ? 'bg-yellow-600 hover:bg-yellow-700' : ''}
+                  >
+                    Redirected ({results.filter(r => r.result === 'Redirected').length})
+                  </Button>
+                  <Button
+                    variant={statusFilter === 'not-found' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setStatusFilter('not-found')}
+                    className={statusFilter === 'not-found' ? 'bg-red-600 hover:bg-red-700' : ''}
+                  >
+                    Not Found ({results.filter(r => r.result === 'Missing' || r.result === 'Error').length})
+                  </Button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
-        {results.length > 0 && (
-          <Card className={isResultsExpanded ? 'fixed inset-0 z-50 rounded-none overflow-auto' : ''}>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Results</CardTitle>
-                <CardDescription>
-                  Detailed results for each URL check
-                </CardDescription>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsResultsExpanded(!isResultsExpanded)}
-                className="flex items-center gap-2"
-              >
-                {isResultsExpanded ? (
-                  <><Minimize2 className="h-4 w-4" /> Exit Fullscreen</>
-                ) : (
-                  <><Maximize2 className="h-4 w-4" /> Fullscreen</>
-                )}
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {/* Filter buttons */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Button
-                  variant={statusFilter === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setStatusFilter('all')}
-                >
-                  All ({results.length})
-                </Button>
-                <Button
-                  variant={statusFilter === 'ok' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setStatusFilter('ok')}
-                  className={statusFilter === 'ok' ? 'bg-green-600 hover:bg-green-700' : ''}
-                >
-                  OK ({results.filter(r => r.result === 'OK').length})
-                </Button>
-                <Button
-                  variant={statusFilter === 'redirected' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setStatusFilter('redirected')}
-                  className={statusFilter === 'redirected' ? 'bg-yellow-600 hover:bg-yellow-700' : ''}
-                >
-                  Redirected ({results.filter(r => r.result === 'Redirected').length})
-                </Button>
-                <Button
-                  variant={statusFilter === 'not-found' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setStatusFilter('not-found')}
-                  className={statusFilter === 'not-found' ? 'bg-red-600 hover:bg-red-700' : ''}
-                >
-                  Not Found ({results.filter(r => r.result === 'Missing' || r.result === 'Error').length})
-                </Button>
-              </div>
+                {/* Path search filter */}
+                <div className="mb-4">
+                  <Input
+                    placeholder="Filter by path... (e.g. 'bed' matches '/bedroom', '/beds')"
+                    value={pathFilter}
+                    onChange={(e) => setPathFilter(e.target.value)}
+                    className="max-w-md"
+                  />
+                </div>
 
-              {/* Path search filter */}
-              <div className="mb-4">
-                <Input
-                  placeholder="Filter by path... (e.g. 'bed' matches '/bedroom', '/beds')"
-                  value={pathFilter}
-                  onChange={(e) => setPathFilter(e.target.value)}
-                  className="max-w-md"
-                />
-              </div>
+                <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-450px)]">
+                  {results
+                    .filter(result => {
+                      let statusMatch = true
+                      if (statusFilter === 'ok') statusMatch = result.result === 'OK'
+                      else if (statusFilter === 'redirected') statusMatch = result.result === 'Redirected'
+                      else if (statusFilter === 'not-found') statusMatch = result.result === 'Missing' || result.result === 'Error'
 
-              <div className={`space-y-4 overflow-y-auto ${isResultsExpanded ? 'max-h-[calc(100vh-280px)]' : 'max-h-96'}`}>
-                {results
-                  .filter(result => {
-                    // Status filter
-                    let statusMatch = true
-                    if (statusFilter === 'ok') statusMatch = result.result === 'OK'
-                    else if (statusFilter === 'redirected') statusMatch = result.result === 'Redirected'
-                    else if (statusFilter === 'not-found') statusMatch = result.result === 'Missing' || result.result === 'Error'
+                      const pathMatch = pathFilter === '' ||
+                        result.sourceUrl.toLowerCase().includes(pathFilter.toLowerCase()) ||
+                        result.newUrl.toLowerCase().includes(pathFilter.toLowerCase())
 
-                    // Path filter (case-insensitive)
-                    const pathMatch = pathFilter === '' ||
-                      result.sourceUrl.toLowerCase().includes(pathFilter.toLowerCase()) ||
-                      result.newUrl.toLowerCase().includes(pathFilter.toLowerCase())
+                      return statusMatch && pathMatch
+                    })
+                    .map((result, index) => (
+                      <ResultCard
+                        key={result.id || index}
+                        result={result}
+                        onRetry={retryVerification}
+                        isRetrying={retryingIds.has(result.id || '')}
+                      />
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-                    return statusMatch && pathMatch
-                  })
-                  .map((result, index) => (
-                    <ResultCard
-                      key={result.id || index}
-                      result={result}
-                      onRetry={retryVerification}
-                      isRetrying={retryingIds.has(result.id || '')}
-                    />
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+          {/* Empty State */}
+          {!isRunning && !summary && results.length === 0 && (
+            <Card className="flex-1 h-full">
+              <CardContent className="h-full flex items-center justify-center">
+                <EmptyState />
+              </CardContent>
+            </Card>
+          )}
+        </main>
       </div>
     </div>
   )

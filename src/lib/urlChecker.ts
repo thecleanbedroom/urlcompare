@@ -19,6 +19,7 @@ export interface CheckUrlConfig {
     followRedirects?: boolean
     retryAttempts?: number
     timeoutSeconds?: number
+    overrideToken?: string
 }
 
 /**
@@ -51,7 +52,8 @@ export async function checkUrlStatus(
     const {
         followRedirects = true,
         retryAttempts = 3,
-        timeoutSeconds = 10
+        timeoutSeconds = 10,
+        overrideToken
     } = config
 
     let retryCount = 0
@@ -65,10 +67,16 @@ export async function checkUrlStatus(
             const controller = new AbortController()
             const timeoutId = setTimeout(() => controller.abort(), timeoutSeconds * 1000)
 
+            const headers: Record<string, string> = {}
+            if (overrideToken) {
+                headers['X-EdgeRedirect-Override'] = overrideToken
+            }
+
             const response = await fetch(newUrl, {
                 method: 'GET',
                 signal: controller.signal,
-                redirect: followRedirects ? 'follow' : 'manual'
+                redirect: followRedirects ? 'follow' : 'manual',
+                headers
             })
 
             clearTimeout(timeoutId)
@@ -79,7 +87,8 @@ export async function checkUrlStatus(
             if (response.redirected) {
                 const finalResponse = await fetch(newUrl, {
                     method: 'GET',
-                    redirect: 'manual'
+                    redirect: 'manual',
+                    headers
                 })
 
                 if (finalResponse.status === 301 || finalResponse.status === 302 || finalResponse.status === 307 || finalResponse.status === 308) {

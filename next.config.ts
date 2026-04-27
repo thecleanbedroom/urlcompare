@@ -6,9 +6,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
   experimental: {
     // Enable experimental features if needed
   },

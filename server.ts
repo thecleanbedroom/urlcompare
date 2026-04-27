@@ -42,6 +42,16 @@ async function createCustomServer() {
 
     setupSocket(io);
 
+    // Forward WebSocket upgrades to Next.js for HMR (non-Socket.IO paths)
+    server.on('upgrade', (req, socket, head) => {
+      if (req.url?.startsWith('/api/socketio')) {
+        // Socket.IO handles its own upgrades
+        return;
+      }
+      // Let Next.js handle HMR WebSocket upgrades
+      nextApp.getUpgradeHandler()(req, socket, head);
+    });
+
     // Start the server
     server.listen(currentPort, hostname, () => {
       console.log(`> Ready on http://${hostname}:${currentPort}`);

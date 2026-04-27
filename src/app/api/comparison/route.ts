@@ -15,6 +15,7 @@ interface ComparisonRequest {
     maxConcurrency?: number
     retryAttempts?: number
     timeoutSeconds?: number
+    overrideToken?: string
   }
   name?: string
 }
@@ -157,7 +158,8 @@ async function processComparisonJob(
     followRedirects = true,
     maxConcurrency = 10,
     retryAttempts = 3,
-    timeoutSeconds = 10
+    timeoutSeconds = 10,
+    overrideToken
   } = config
 
   try {
@@ -179,7 +181,7 @@ async function processComparisonJob(
           const result = await checkUrlStatus(
             sourceUrl,
             newDomain,
-            { followRedirects, retryAttempts, timeoutSeconds }
+            { followRedirects, retryAttempts, timeoutSeconds, overrideToken }
           )
           return result
         } catch (err) {

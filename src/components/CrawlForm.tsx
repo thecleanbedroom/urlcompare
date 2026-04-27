@@ -26,6 +26,7 @@ import {
 
 interface CrawlFormProps {
     onComplete?: (urls: string[]) => void;
+    overrideToken?: string;
 }
 
 interface CrawlJob {
@@ -37,7 +38,7 @@ interface CrawlJob {
     lastError?: string;
 }
 
-export function CrawlForm({ onComplete }: CrawlFormProps) {
+export function CrawlForm({ onComplete, overrideToken }: CrawlFormProps) {
     const [sourceDomain, setSourceDomain] = useState('');
     const [jobName, setJobName] = useState('');
     const [maxPages, setMaxPages] = useState(100);
@@ -95,6 +96,7 @@ export function CrawlForm({ onComplete }: CrawlFormProps) {
                     delayMs,
                     excludePatterns: excludeArray.length > 0 ? excludeArray : undefined,
                     includePatterns: includeArray.length > 0 ? includeArray : undefined,
+                    overrideToken: overrideToken?.trim() || undefined,
                 }),
             });
 

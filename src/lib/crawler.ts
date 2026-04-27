@@ -9,6 +9,7 @@ export interface CrawlerOptions {
     delayMs: number;
     includePatterns?: string[];
     excludePatterns?: string[];
+    overrideToken?: string;
     onProgress?: (visited: number, discovered: number, currentUrl: string) => void;
     onError?: (url: string, error: Error) => void;
     signal?: AbortSignal;
@@ -122,12 +123,17 @@ export class DomainCrawler {
         const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
         try {
+            const fetchHeaders: Record<string, string> = {
+                'User-Agent': 'URLCompare Domain Scanner/1.0',
+                'Accept': 'text/html,application/xhtml+xml',
+            };
+            if (this.options.overrideToken) {
+                fetchHeaders['X-EdgeRedirect-Override'] = this.options.overrideToken;
+            }
+
             const response = await fetch(url, {
                 signal: controller.signal,
-                headers: {
-                    'User-Agent': 'URLCompare Domain Scanner/1.0',
-                    'Accept': 'text/html,application/xhtml+xml',
-                },
+                headers: fetchHeaders,
                 redirect: 'follow',
             });
 
@@ -274,6 +280,7 @@ export async function processCrawlJob(
         delayMs: number;
         includePatterns?: string[];
         excludePatterns?: string[];
+        overrideToken?: string;
     },
     updateProgress: (data: {
         pagesVisited?: number;
