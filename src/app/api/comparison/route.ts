@@ -8,18 +8,21 @@ import {
   isUrlSafe,
   type ComparisonResult
 } from '@/lib/urlChecker'
+import { ComparisonRequestSchema } from '@/lib/schemas'
 
 interface ComparisonRequest {
   sourceUrls: string[]
   newDomain: string
-  config?: {
-    followRedirects?: boolean
-    maxConcurrency?: number
-    retryAttempts?: number
-    timeoutSeconds?: number
-    useOverrideToken?: boolean
-  }
+  config?: ComparisonConfig
   name?: string
+}
+
+interface ComparisonConfig {
+  followRedirects?: boolean
+  maxConcurrency?: number
+  retryAttempts?: number
+  timeoutSeconds?: number
+  useOverrideToken?: boolean
 }
 
 // Store active comparison abort controllers for cancellation
@@ -27,49 +30,26 @@ const activeComparisons = new Map<string, AbortController>()
 
 export async function POST(request: NextRequest) {
   try {
-    const body: ComparisonRequest = await request.json()
+    const body = await request.json()
+
+    // Validate input with Zod
+    const parsed = ComparisonRequestSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.flatten() },
+        { status: 400 }
+      )
+    }
 
     const {
       sourceUrls,
       newDomain,
       config = {},
       name
-    } = body
-
-    // Validate input
-    if (!sourceUrls || !Array.isArray(sourceUrls) || sourceUrls.length === 0) {
-      return NextResponse.json(
-        { error: 'sourceUrls is required and must be a non-empty array' },
-        { status: 400 }
-      )
-    }
-
-    if (!newDomain || typeof newDomain !== 'string') {
-      return NextResponse.json(
-        { error: 'newDomain is required and must be a string' },
-        { status: 400 }
-      )
-    }
-
-    // Validate URLs
-    const validUrls = sourceUrls.filter(url => {
-      try {
-        new URL(url)
-        return true
-      } catch {
-        return false
-      }
-    })
-
-    if (validUrls.length !== sourceUrls.length) {
-      return NextResponse.json(
-        { error: 'Some URLs are invalid' },
-        { status: 400 }
-      )
-    }
+    } = parsed.data
 
     // SSRF protection — reject private/internal URLs
-    const unsafeUrl = validUrls.find(url => !isUrlSafe(url).safe)
+    const unsafeUrl = sourceUrls.find(url => !isUrlSafe(url).safe)
     if (unsafeUrl) {
       return NextResponse.json(
         { error: `URL blocked for security: ${unsafeUrl}` },
@@ -90,23 +70,23 @@ export async function POST(request: NextRequest) {
     const job = await db.comparisonJob.create({
       data: {
         name: name || `Comparison ${new Date().toISOString()}`,
-        sourceUrls: toJsonString(validUrls),
+        sourceUrls: toJsonString(sourceUrls),
         newDomain,
         config: toJsonString(config),
-        totalUrls: validUrls.length,
+        totalUrls: sourceUrls.length,
         status: 'pending'
       }
     })
 
     // Start processing in background
-    processComparisonJob(job.id, validUrls, newDomain, config).catch(error => {
+    processComparisonJob(job.id, sourceUrls, newDomain, config).catch(error => {
       console.error(`Error processing job ${job.id}:`, error)
     })
 
     return NextResponse.json({
       jobId: job.id,
       message: 'Comparison job started',
-      totalUrls: validUrls.length
+      totalUrls: sourceUrls.length
     })
 
   } catch (error) {
@@ -217,7 +197,7 @@ async function processComparisonJob(
   jobId: string,
   sourceUrls: string[],
   newDomain: string,
-  config: any
+  config: ComparisonConfig
 ) {
   const {
     followRedirects = true,
@@ -331,7 +311,11 @@ async function processComparisonJob(
 
 
 
-function generateSummary(results: any[]) {
+interface SummaryInput {
+  result: string
+}
+
+function generateSummary(results: SummaryInput[]) {
   return {
     totalUrls: results.length,
     ok: results.filter(r => r.result === 'OK').length,

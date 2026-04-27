@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { UrlResult, JobSummary } from '@/types'
+import { getBackoffDelay } from '@/lib/polling'
 
 interface UseComparisonReturn {
   sourceUrls: string
@@ -146,6 +147,7 @@ export function useComparison(jobIdParam: string | null): UseComparisonReturn {
     const maxPollTime = 300000
     const startTime = Date.now()
     const controller = new AbortController()
+    let pollCount = 0
 
     try {
       while (true) {
@@ -189,8 +191,11 @@ export function useComparison(jobIdParam: string | null): UseComparisonReturn {
             : 0
           setProgress(prog)
 
+          const delay = getBackoffDelay(pollCount)
+          pollCount++
+
           await new Promise((resolve) => {
-            const timeoutId = setTimeout(resolve, 2000)
+            const timeoutId = setTimeout(resolve, delay)
             controller.signal.addEventListener('abort', () => {
               clearTimeout(timeoutId)
               resolve(null)

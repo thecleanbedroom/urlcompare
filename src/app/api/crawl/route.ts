@@ -1,18 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { processCrawlJob } from '@/lib/crawler';
+import { processCrawlJob, type CrawlerOptions } from '@/lib/crawler';
 import { safeParseJson, toJsonString } from '@/lib/json';
-
-interface StartCrawlRequest {
-    sourceDomain: string;
-    name?: string;
-    maxPages?: number;
-    maxDepth?: number;
-    delayMs?: number;
-    includePatterns?: string[];
-    excludePatterns?: string[];
-    useOverrideToken?: boolean;
-}
+import { CrawlRequestSchema } from '@/lib/schemas';
 
 // Store active crawl abort controllers
 const activeCrawls = new Map<string, AbortController>();
@@ -22,22 +12,13 @@ const activeCrawls = new Map<string, AbortController>();
  */
 export async function POST(request: NextRequest) {
     try {
-        const body: StartCrawlRequest = await request.json();
+        const body = await request.json();
 
-        // Validate required fields
-        if (!body.sourceDomain) {
+        // Validate input with Zod
+        const parsed = CrawlRequestSchema.safeParse(body);
+        if (!parsed.success) {
             return NextResponse.json(
-                { error: 'sourceDomain is required' },
-                { status: 400 }
-            );
-        }
-
-        // Validate URL format
-        try {
-            new URL(body.sourceDomain);
-        } catch {
-            return NextResponse.json(
-                { error: 'Invalid sourceDomain URL format' },
+                { error: 'Validation failed', details: parsed.error.flatten() },
                 { status: 400 }
             );
         }
@@ -45,25 +26,25 @@ export async function POST(request: NextRequest) {
         // Create crawl job in database
         const job = await db.crawlJob.create({
             data: {
-                name: body.name || null,
-                sourceDomain: body.sourceDomain,
-                maxPages: body.maxPages || 500,
-                maxDepth: body.maxDepth || 10,
-                delayMs: body.delayMs || 200,
-                includePatterns: body.includePatterns ? toJsonString(body.includePatterns) : null,
-                excludePatterns: body.excludePatterns ? toJsonString(body.excludePatterns) : null,
+                name: parsed.data.name || null,
+                sourceDomain: parsed.data.sourceDomain,
+                maxPages: parsed.data.maxPages || 500,
+                maxDepth: parsed.data.maxDepth || 10,
+                delayMs: parsed.data.delayMs || 200,
+                includePatterns: parsed.data.includePatterns ? toJsonString(parsed.data.includePatterns) : null,
+                excludePatterns: parsed.data.excludePatterns ? toJsonString(parsed.data.excludePatterns) : null,
                 status: 'pending',
             },
         });
 
         // Start crawl in background (non-blocking)
-        startCrawlInBackground(job.id, body.sourceDomain, {
+        startCrawlInBackground(job.id, parsed.data.sourceDomain, {
             maxPages: body.maxPages || 500,
             maxDepth: body.maxDepth || 10,
             delayMs: body.delayMs || 200,
-            includePatterns: body.includePatterns,
-            excludePatterns: body.excludePatterns,
-            useOverrideToken: body.useOverrideToken,
+            includePatterns: parsed.data.includePatterns,
+            excludePatterns: parsed.data.excludePatterns,
+            useOverrideToken: parsed.data.useOverrideToken,
         });
 
         return NextResponse.json({
@@ -227,10 +208,10 @@ async function startCrawlInBackground(
         await processCrawlJob(
             jobId,
             sourceDomain,
-            { ...options, signal: controller.signal } as any,
+            { ...options, signal: controller.signal } as CrawlerOptions,
             async (data) => {
                 // Update database with progress
-                const updateData: any = {
+                const updateData: Record<string, unknown> = {
                     updatedAt: new Date(),
                 };
 

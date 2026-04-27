@@ -23,6 +23,7 @@ import {
     XCircle,
     ArrowRight
 } from 'lucide-react';
+import { getBackoffDelay } from '@/lib/polling';
 
 interface CrawlFormProps {
     onComplete?: (urls: string[]) => void;
@@ -119,6 +120,7 @@ export function CrawlForm({ onComplete, useOverrideToken }: CrawlFormProps) {
     const pollCrawlJob = async (jobId: string) => {
         const maxPollTime = 600000; // 10 minutes
         const startTime = Date.now();
+        let pollCount = 0;
 
         while (true) {
             if (Date.now() - startTime > maxPollTime) {
@@ -151,8 +153,10 @@ export function CrawlForm({ onComplete, useOverrideToken }: CrawlFormProps) {
                     return;
                 }
 
-                // Wait before polling again
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Wait before polling again (with backoff)
+                const delay = getBackoffDelay(pollCount)
+                pollCount++
+                await new Promise(resolve => setTimeout(resolve, delay));
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'An error occurred');
                 setIsRunning(false);

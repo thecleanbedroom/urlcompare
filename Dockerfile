@@ -1,15 +1,16 @@
-FROM node:20-slim
+FROM node:22-alpine
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Copy package files
 COPY package*.json ./
+
+# Copy Prisma config (Prisma 7 uses prisma.config.ts)
 COPY prisma ./prisma/
+COPY prisma.config.ts ./
 
 # Install dependencies
 RUN npm install
@@ -21,7 +22,7 @@ COPY . .
 RUN npm run build
 
 # Create necessary directories
-RUN mkdir -p /app/.next/cache /app/db
+RUN mkdir -p /app/prisma/db
 
 # Set environment variables
 ENV NODE_ENV=production
@@ -32,5 +33,5 @@ ENV DATABASE_URL=file:./db/custom.db
 # Expose the port the app runs on
 EXPOSE 3000
 
-# Start the application
-CMD ["sh", "-c", "npm run migrate && npm start"]
+# Start the application (run prisma db push then start)
+CMD ["sh", "-c", "npx prisma db push && npm start"]

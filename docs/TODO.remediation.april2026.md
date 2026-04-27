@@ -292,76 +292,76 @@ Each task is a self-contained unit of work. Tasks within a phase should be compl
 
 **Commit message:** `test: add unit tests, improve type safety, update Docker config`
 
-- [ ] **6.1 — Set Up Test Infrastructure**
-  - [ ] `npm install -D vitest @testing-library/react @testing-library/jest-dom`
-  - [ ] Add `"test": "vitest run"` and `"test:watch": "vitest"` to `package.json`
-  - [ ] Create `vitest.config.ts` with `@` path alias
-  - [ ] Verify: `npm test` runs (even if no tests yet)
+- [x] **6.1 — Set Up Test Infrastructure**
+  - [x] `npm install -D vitest @testing-library/react @testing-library/jest-dom`
+  - [x] Add `"test": "vitest run"` and `"test:watch": "vitest"` to `package.json`
+  - [x] Create `vitest.config.ts` with `@` path alias
+  - [x] Verify: `npm test` runs (even if no tests yet)
 
-- [ ] **6.2 — Unit Tests for `urlChecker.ts`**
-  - [ ] Create `src/lib/__tests__/urlChecker.test.ts`
-  - [ ] Test `extractPath()` with pathname, query params, hash fragments, invalid URL
-  - [ ] Test `constructNewUrl()` with various path + domain combos
-  - [ ] Test `isUrlSafe()`:
-    - [ ] Allows HTTPS URLs
-    - [ ] Allows public 172.x IPs (e.g., `172.217.0.1`)
-    - [ ] Blocks private `172.16-31.x.x` range
-    - [ ] Blocks `file://` URLs
-    - [ ] Blocks metadata IP `169.254.169.254`
-    - [ ] Blocks `localhost`
-    - [ ] Blocks `10.x.x.x`
-    - [ ] Blocks `192.168.x.x`
-  - [ ] Verify: `npm test` — all pass
+- [x] **6.2 — Unit Tests for `urlChecker.ts`**
+  - [x] Create `src/lib/__tests__/urlChecker.test.ts`
+  - [x] Test `extractPath()` with pathname, query params, hash fragments, invalid URL
+  - [x] Test `constructNewUrl()` with various path + domain combos
+  - [x] Test `isUrlSafe()`:
+    - [x] Allows HTTPS URLs
+    - [x] Allows public 172.x IPs (e.g., `172.217.0.1`)
+    - [x] Blocks private `172.16-31.x.x` range
+    - [x] Blocks `file://` URLs
+    - [x] Blocks metadata IP `169.254.169.254`
+    - [x] Blocks `localhost`
+    - [x] Blocks `10.x.x.x`
+    - [x] Blocks `192.168.x.x`
+  - [x] Verify: `npm test` — all pass
 
-- [ ] **6.3 — Unit Tests for `json.ts`**
-  - [ ] Create `src/lib/__tests__/json.test.ts`
-  - [ ] Test `safeParseJson()` with valid JSON
-  - [ ] Test `safeParseJson()` with invalid JSON — returns fallback
-  - [ ] Test `safeParseJson()` with null/undefined — returns fallback
-  - [ ] Test `toJsonString()` with arrays and objects
-  - [ ] Verify: `npm test` — all pass
+- [x] **6.3 — Unit Tests for `json.ts`**
+  - [x] Create `src/lib/__tests__/json.test.ts`
+  - [x] Test `safeParseJson()` with valid JSON
+  - [x] Test `safeParseJson()` with invalid JSON — returns fallback
+  - [x] Test `safeParseJson()` with null/undefined — returns fallback
+  - [x] Test `toJsonString()` with arrays and objects
+  - [x] Verify: `npm test` — all pass
 
-- [ ] **6.4 — Unit Tests for `crawler.ts`**
-  - [ ] Create `src/lib/__tests__/crawler.test.ts`
-  - [ ] Test URL normalization
-  - [ ] Test glob pattern matching (include/exclude)
-  - [ ] Test link extraction from HTML
-  - [ ] Verify: `npm test` — all pass
+- [x] **6.4 — Unit Tests for `crawler.ts`**
+  - [x] Create `src/lib/__tests__/crawler.test.ts`
+  - [x] Test URL normalization
+  - [x] Test glob pattern matching (include/exclude)
+  - [x] Test link extraction from HTML
+  - [x] Verify: `npm test` — all pass
 
-- [ ] **6.5 — Eliminate `any` Types**
-  - [ ] Create `ComparisonConfig` interface for `processComparisonJob` config param
-  - [ ] Type `generateSummary` parameter as Prisma `UrlResult[]`
-  - [ ] Replace `job.status as any` in `jobs/page.tsx` with `JobStatus` type
-  - [ ] Define proper options interface for `processCrawlJob` (remove `as any`)
-  - [ ] Verify: `npx tsc --noEmit` passes, grep for remaining `any` — only intentional suppressed ones
+- [x] **6.5 — Eliminate `any` Types**
+  - [x] Create `ComparisonConfig` interface for `processComparisonJob` config param
+  - [x] Type `generateSummary` parameter as Prisma `UrlResult[]`
+  - [x] Replace `job.status as any` in `jobs/page.tsx` with `JobStatus` type
+  - [x] Define proper options interface for `processCrawlJob` (remove `as any`)
+  - [x] Verify: `npx tsc --noEmit` passes, grep for remaining `any` — only intentional suppressed ones
 
-- [ ] **6.6 — Add Polling Backoff**
-  - [ ] Create `getBackoffDelay(pollCount)` utility (2s → 3s → 4.5s → ... → 15s cap)
-  - [ ] Apply to comparison polling in `useComparison.ts` (or `page.tsx`)
-  - [ ] Apply to crawl polling in `CrawlForm.tsx`
-  - [ ] Verify: start a long job — observe increasing poll intervals in Network tab
+- [x] **6.6 — Add Polling Backoff**
+  - [x] Create `getBackoffDelay(pollCount)` utility (2s → 3s → 4.5s → ... → 15s cap)
+  - [x] Apply to comparison polling in `useComparison.ts` (or `page.tsx`)
+  - [x] Apply to crawl polling in `CrawlForm.tsx`
+  - [x] Verify: start a long job — observe increasing poll intervals in Network tab
 
-- [ ] **6.7 — Add Input Validation with Zod**
-  - [ ] Create `src/lib/schemas.ts`
-  - [ ] Define `ComparisonRequestSchema` with Zod
-  - [ ] Define `CrawlRequestSchema` with Zod
-  - [ ] Use `ComparisonRequestSchema.safeParse()` in `comparison/route.ts` POST handler
-  - [ ] Use `CrawlRequestSchema.safeParse()` in `crawl/route.ts` POST handler
-  - [ ] Return `400` with `.error.flatten()` on validation failure
-  - [ ] Verify: send malformed request body — get structured error response
+- [x] **6.7 — Add Input Validation with Zod**
+  - [x] Create `src/lib/schemas.ts`
+  - [x] Define `ComparisonRequestSchema` with Zod
+  - [x] Define `CrawlRequestSchema` with Zod
+  - [x] Use `ComparisonRequestSchema.safeParse()` in `comparison/route.ts` POST handler
+  - [x] Use `CrawlRequestSchema.safeParse()` in `crawl/route.ts` POST handler
+  - [x] Return `400` with `.error.flatten()` on validation failure
+  - [x] Verify: send malformed request body — get structured error response
 
-- [ ] **6.8 — Update Docker Configuration**
-  - [ ] Update `Dockerfile` base image to `node:22-alpine`
-  - [ ] Review/update build steps for Next.js 16 output structure
-  - [ ] Update `docker-compose.yml` if needed
-  - [ ] Verify: `docker build -t urlcompare .` succeeds
+- [x] **6.8 — Update Docker Configuration**
+  - [x] Update `Dockerfile` base image to `node:22-alpine`
+  - [x] Review/update build steps for Next.js 16 output structure
+  - [x] Update `docker-compose.yml` if needed
+  - [x] Verify: `docker build -t urlcompare .` succeeds
 
-- [ ] **Phase 6 gate: commit & verify**
-  - [ ] `npm test` — all tests pass
-  - [ ] `npx tsc --noEmit` passes
-  - [ ] `npm run lint` passes
-  - [ ] `npm run build` succeeds
-  - [ ] Git commit: `test: add unit tests, improve type safety, update Docker config`
+- [x] **Phase 6 gate: commit & verify**
+  - [x] `npm test` — all tests pass
+  - [x] `npx tsc --noEmit` passes
+  - [x] `npm run lint` passes
+  - [x] `npm run build` succeeds
+  - [x] Git commit: `test: add unit tests, improve type safety, update Docker config`
 
 ---
 

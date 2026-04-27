@@ -11,6 +11,8 @@ services:
       - HOSTNAME=0.0.0.0
       - DATABASE_URL=file:./db/custom.db
     volumes:
-      - ./db:/app/db
-      - ./prisma/migrations:/app/prisma/migrations
+      - db-data:/app/prisma/db
     restart: unless-stopped
+
+volumes:
+  db-data:
