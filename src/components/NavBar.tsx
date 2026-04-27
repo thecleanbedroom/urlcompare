@@ -1,27 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 function NavBarContent() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   
   const navItems = [
-    { name: 'New Comparison', href: '/', matchExact: false },
-    { name: 'Job History', href: '/jobs', matchExact: true },
+    { name: 'New Comparison', href: '/' },
+    { name: 'Job History', href: '/jobs' },
+    { name: 'Crawl History', href: '/crawl' },
   ];
 
-  const isActive = (href: string, matchExact: boolean) => {
-    // For the home page, we want to show it as active for both '/' and '/?jobId=...'
+  const isActive = (href: string) => {
     if (href === '/') {
       return pathname === '/';
     }
-    
-    // For other routes, match exactly
-    return pathname === href;
+    return pathname === href || pathname.startsWith(href + '/');
   };
 
   return (
@@ -34,7 +30,7 @@ function NavBarContent() {
                 href={item.href}
                 className={cn(
                   'px-3 py-2 rounded-md text-sm font-medium transition-colors',
-                  isActive(item.href, item.matchExact)
+                  isActive(item.href)
                     ? 'bg-gray-100 text-gray-900'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 )}

@@ -2,19 +2,10 @@
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { CheckCircle, XCircle, AlertCircle, RefreshCw, ExternalLink } from 'lucide-react'
+import { RefreshCw, ExternalLink } from 'lucide-react'
 import { safeParseJson } from '@/lib/json'
-
-interface UrlResult {
-    id?: string
-    sourceUrl: string
-    newUrl: string
-    statusCode: number | null
-    redirectChain: string[]
-    finalUrl: string | null
-    result: 'OK' | 'Missing' | 'Error' | 'Redirected'
-    error?: string
-}
+import { getStatusBadge } from '@/lib/status'
+import type { UrlResult } from '@/types'
 
 interface ResultCardProps {
     result: UrlResult
@@ -32,50 +23,6 @@ function extractPath(url: string): string {
     } catch {
         return url
     }
-}
-
-/**
- * Get the appropriate status icon based on result
- */
-function getStatusIcon(result: string) {
-    switch (result) {
-        case 'OK':
-            return <CheckCircle className="h-4 w-4" />
-        case 'Missing':
-            return <XCircle className="h-4 w-4" />
-        case 'Error':
-            return <AlertCircle className="h-4 w-4" />
-        case 'Redirected':
-            return <AlertCircle className="h-4 w-4" />
-        default:
-            return <AlertCircle className="h-4 w-4" />
-    }
-}
-
-/**
- * Get status badge with proper variant and label
- */
-function getStatusBadge(result: string) {
-    const variants: Record<string, 'success' | 'warning' | 'destructive' | 'secondary'> = {
-        OK: 'success',
-        Redirected: 'warning',
-        Missing: 'destructive',
-        Error: 'destructive'
-    }
-
-    const labels: Record<string, string> = {
-        OK: 'OK',
-        Redirected: 'Redirected',
-        Missing: 'Not Found',
-        Error: 'Not Found'
-    }
-
-    return (
-        <Badge variant={variants[result] || 'secondary'} className="flex items-center gap-1">
-            {getStatusIcon(result)}
-            {labels[result] || result}
-        </Badge>
-    )
 }
 
 export function ResultCard({ result, onRetry, isRetrying }: ResultCardProps) {

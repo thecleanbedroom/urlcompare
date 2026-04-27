@@ -14,8 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog";
-
-type JobStatus = 'pending' | 'running' | 'completed' | 'failed';
+import type { JobStatus } from '@/types'
 
 interface JobCardProps {
   id: string;
@@ -25,14 +24,16 @@ interface JobCardProps {
   totalUrls: number;
   completedUrls: number;
   newDomain: string;
+  onDelete?: (id: string) => void;
 }
 
-export function JobCard({ id, name, status, createdAt, totalUrls, completedUrls, newDomain }: JobCardProps) {
+export function JobCard({ id, name, status, createdAt, totalUrls, completedUrls, newDomain, onDelete }: JobCardProps) {
   const statusVariant = {
     pending: 'bg-yellow-100 text-yellow-800',
     running: 'bg-blue-100 text-blue-800',
     completed: 'bg-green-100 text-green-800',
     failed: 'bg-red-100 text-red-800',
+    cancelled: 'bg-gray-100 text-gray-800',
   }[status];
 
   const progress = totalUrls > 0 ? Math.round((completedUrls / totalUrls) * 100) : 0;
@@ -57,8 +58,10 @@ export function JobCard({ id, name, status, createdAt, totalUrls, completedUrls,
         throw new Error('Failed to delete job');
       }
 
-      // Refresh the jobs list after successful deletion
-      window.location.reload();
+      // Notify parent to remove from state
+      if (onDelete) {
+        onDelete(id);
+      }
     } catch (error) {
       console.error('Error deleting job:', error);
       alert('Failed to delete job. Please try again.');

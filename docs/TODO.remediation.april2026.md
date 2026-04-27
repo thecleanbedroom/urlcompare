@@ -201,11 +201,11 @@ Each task is a self-contained unit of work. Tasks within a phase should be compl
   - [x] Add `"predev"` and/or `"prestart"` script in `package.json` for `prisma db push`
   - [x] Verify: delete `prisma/db/custom.db`, run `npm run dev` — DB is created by predev script
 
-- [ ] **Phase 4 gate: commit & verify**
-  - [ ] `npx tsc --noEmit` passes
-  - [ ] `npm run lint` passes
-  - [ ] `npm run dev` starts without errors
-  - [ ] Git commit: `feat: full redirect chain detection, comparison cancellation, API improvements`
+- [x] **Phase 4 gate: commit & verify**
+  - [x] `npx tsc --noEmit` passes
+  - [x] `npm run lint` passes
+  - [x] `npm run dev` starts without errors
+  - [x] Git commit: `feat: full redirect chain detection, comparison cancellation, API improvements`
 
 ---
 
@@ -213,78 +213,78 @@ Each task is a self-contained unit of work. Tasks within a phase should be compl
 
 **Commit message:** `refactor: decompose page.tsx, shared types, UI improvements`
 
-- [ ] **5.1 — Extract Shared Types**
-  - [ ] Create `src/types/index.ts`
-  - [ ] Define `UrlResult` interface (single source of truth)
-  - [ ] Define `JobSummary` interface
-  - [ ] Define `StatusFilter` type
-  - [ ] Define `JobStatus` type (include `'cancelled'`)
-  - [ ] Update imports in `page.tsx` to use shared type
-  - [ ] Update imports in `ResultCard.tsx` to use shared type
-  - [ ] Update imports in `JobCard.tsx` to use shared type
-  - [ ] Update imports in `jobs/page.tsx` to use shared type
-  - [ ] Delete duplicate type definitions from all files
+- [x] **5.1 — Extract Shared Types**
+  - [x] Create `src/types/index.ts`
+  - [x] Define `UrlResult` interface (single source of truth)
+  - [x] Define `JobSummary` interface
+  - [x] Define `StatusFilter` type
+  - [x] Define `JobStatus` type (include `'cancelled'`)
+  - [x] Update imports in `page.tsx` to use shared type
+  - [x] Update imports in `ResultCard.tsx` to use shared type
+  - [x] Update imports in `JobCard.tsx` to use shared type
+  - [x] Update imports in `jobs/page.tsx` to use shared type
+  - [x] Delete duplicate type definitions from all files
 
-- [ ] **5.2 — Extract Shared Status Utilities**
-  - [ ] Create `src/lib/status.tsx`
-  - [ ] Move `getStatusIcon()` to shared module
-  - [ ] Move `getStatusBadge()` to shared module
-  - [ ] Update `page.tsx` to import from shared module
-  - [ ] Update `ResultCard.tsx` to import from shared module
-  - [ ] Delete duplicate implementations
+- [x] **5.2 — Extract Shared Status Utilities**
+  - [x] Create `src/lib/status.tsx`
+  - [x] Move `getStatusIcon()` to shared module
+  - [x] Move `getStatusBadge()` to shared module
+  - [x] Update `page.tsx` to import from shared module
+  - [x] Update `ResultCard.tsx` to import from shared module
+  - [x] Delete duplicate implementations
 
-- [ ] **5.3 — Decompose `page.tsx`**
-  - [ ] Create `src/hooks/useComparison.ts`
-    - [ ] Move all comparison state (`sourceUrls`, `newDomain`, `jobId`, `results`, etc.)
-    - [ ] Move `runComparison()` function
-    - [ ] Move `pollForCompletion()` function
-    - [ ] Move `retryVerification()` function
-    - [ ] Move job loading logic from `useEffect`
-    - [ ] Export a single hook with all state and actions
-  - [ ] Create `src/hooks/useResultFilter.ts`
-    - [ ] Move `statusFilter` and `pathFilter` state
-    - [ ] Move filter predicate logic
-    - [ ] Export hook returning filter state + setters + filtered results function
-  - [ ] Create `src/components/ComparisonConfig.tsx`
-    - [ ] Move the entire left panel (Tabs, manual form, config grid, override token)
-    - [ ] Accept comparison hook values as props
-  - [ ] Create `src/components/SummaryCard.tsx`
-    - [ ] Move the 5-stat summary grid (OK/Redirected/Missing/Error/Total)
-    - [ ] Accept `JobSummary` as props
-  - [ ] Create `src/components/ResultsPanel.tsx`
-    - [ ] Move summary card + filter bar + result list + export buttons
-    - [ ] Accept comparison + filter hook values as props
-  - [ ] Create `src/components/FullscreenResults.tsx`
-    - [ ] Move the fullscreen overlay
-    - [ ] Accept comparison + filter hook values as props
-  - [ ] Reduce `page.tsx` to ~60-line orchestrator
-  - [ ] Verify: all functionality works identically (compare, filter, retry, export, fullscreen)
+- [x] **5.3 — Decompose `page.tsx`**
+  - [x] Create `src/hooks/useComparison.ts`
+    - [x] Move all comparison state (`sourceUrls`, `newDomain`, `jobId`, `results`, etc.)
+    - [x] Move `runComparison()` function
+    - [x] Move `pollForCompletion()` function
+    - [x] Move `retryVerification()` function
+    - [x] Move job loading logic from `useEffect`
+    - [x] Export a single hook with all state and actions
+  - [x] Create `src/hooks/useResultFilter.ts`
+    - [x] Move `statusFilter` and `pathFilter` state
+    - [x] Move filter predicate logic
+    - [x] Export hook returning filter state + setters + filtered results function
+  - [x] Create `src/components/ComparisonConfig.tsx`
+    - [x] Move the entire left panel (Tabs, manual form, config grid, override token)
+    - [x] Accept comparison hook values as props
+  - [x] Create `src/components/SummaryCard.tsx`
+    - [x] Move the 5-stat summary grid (OK/Redirected/Missing/Error/Total)
+    - [x] Accept `JobSummary` as props
+  - [x] Create `src/components/ResultsPanel.tsx`
+    - [x] Move summary card + filter bar + result list + export buttons
+    - [x] Accept comparison + filter hook values as props
+  - [x] Create `src/components/FullscreenResults.tsx`
+    - [x] Move the fullscreen overlay
+    - [x] Accept comparison + filter hook values as props
+  - [x] Reduce `page.tsx` to ~60-line orchestrator
+  - [x] Verify: all functionality works identically (compare, filter, retry, export, fullscreen)
 
-- [ ] **5.4 — Wire Export Buttons to Server-Side API**
-  - [ ] Replace client-side `Blob` export with `window.open('/api/export?jobId=...&format=...')`
-  - [ ] Remove `exportResults` function that builds Blobs in memory
-  - [ ] Verify: CSV and JSON exports download correctly via server endpoint
+- [x] **5.4 — Wire Export Buttons to Server-Side API**
+  - [x] Replace client-side `Blob` export with `window.open('/api/export?jobId=...&format=...')`
+  - [x] Remove `exportResults` function that builds Blobs in memory
+  - [x] Verify: CSV and JSON exports download correctly via server endpoint
 
-- [ ] **5.5 — Fix `JobCard` Deletion UX**
-  - [ ] Add `onDelete?: (id: string) => void` to `JobCardProps`
-  - [ ] Replace `window.location.reload()` with `onDelete(id)` callback
-  - [ ] Update `jobs/page.tsx` to pass `handleDelete` that removes job from state
-  - [ ] Verify: delete a job — list updates without page reload
+- [x] **5.5 — Fix `JobCard` Deletion UX**
+  - [x] Add `onDelete?: (id: string) => void` to `JobCardProps`
+  - [x] Replace `window.location.reload()` with `onDelete(id)` callback
+  - [x] Update `jobs/page.tsx` to pass `handleDelete` that removes job from state
+  - [x] Verify: delete a job — list updates without page reload
 
-- [ ] **5.6 — Fix NavBar Issues**
-  - [ ] Remove `matchExact` from `navItems` and `isActive()` parameter
-  - [ ] Add "Crawl History" link (`/crawl`) to `navItems`
-  - [ ] Verify: all three nav links work and highlight correctly
+- [x] **5.6 — Fix NavBar Issues**
+  - [x] Remove `matchExact` from `navItems` and `isActive()` parameter
+  - [x] Add "Crawl History" link (`/crawl`) to `navItems`
+  - [x] Verify: all three nav links work and highlight correctly
 
-- [ ] **5.7 — Remove CSS Mobile Block**
-  - [ ] Remove `min-width: 1024px` from `body` in `globals.css`
-  - [ ] Verify: page loads on narrow viewport without being clipped (horizontal scroll is acceptable)
+- [x] **5.7 — Remove CSS Mobile Block**
+  - [x] Remove `min-width: 1024px` from `body` in `globals.css`
+  - [x] Verify: page loads on narrow viewport without being clipped (horizontal scroll is acceptable)
 
-- [ ] **Phase 5 gate: commit & verify**
-  - [ ] `npx tsc --noEmit` passes
-  - [ ] `npm run lint` passes
-  - [ ] Full UI smoke test (compare, scan, filter, retry, export, delete, navigate)
-  - [ ] Git commit: `refactor: decompose page.tsx, shared types, UI improvements`
+- [x] **Phase 5 gate: commit & verify**
+  - [x] `npx tsc --noEmit` passes
+  - [x] `npm run lint` passes
+  - [x] Full UI smoke test (compare, scan, filter, retry, export, delete, navigate)
+  - [x] Git commit: `refactor: decompose page.tsx, shared types, UI improvements`
 
 ---
 

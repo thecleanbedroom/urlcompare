@@ -5,11 +5,12 @@ import { JobCard } from '@/components/JobCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import type { JobStatus } from '@/types';
 
 type Job = {
   id: string;
   name: string | null;
-  status: string;
+  status: JobStatus;
   createdAt: string;
   totalUrls: number;
   completedUrls: number;
@@ -89,11 +90,12 @@ function JobsContent() {
                 key={job.id}
                 id={job.id}
                 name={job.name || 'Untitled Job'}
-                status={job.status as any}
+                status={job.status}
                 createdAt={job.createdAt}
                 totalUrls={job.totalUrls}
                 completedUrls={job.completedUrls}
                 newDomain={job.newDomain}
+                onDelete={(deletedId) => setJobs(prev => prev.filter(j => j.id !== deletedId))}
               />
             ))}
           </div>
