@@ -4,6 +4,7 @@ import {
   checkUrlStatus,
   extractPath,
   constructNewUrl,
+  isUrlSafe,
   type ComparisonResult
 } from '@/lib/urlChecker'
 
@@ -59,6 +60,24 @@ export async function POST(request: NextRequest) {
     if (validUrls.length !== sourceUrls.length) {
       return NextResponse.json(
         { error: 'Some URLs are invalid' },
+        { status: 400 }
+      )
+    }
+
+    // SSRF protection — reject private/internal URLs
+    const unsafeUrl = validUrls.find(url => !isUrlSafe(url).safe)
+    if (unsafeUrl) {
+      return NextResponse.json(
+        { error: `URL blocked for security: ${unsafeUrl}` },
+        { status: 400 }
+      )
+    }
+
+    // Also validate the new domain
+    const domainCheck = isUrlSafe(newDomain.startsWith('http') ? newDomain : `https://${newDomain}`)
+    if (!domainCheck.safe) {
+      return NextResponse.json(
+        { error: `New domain blocked for security: ${newDomain}` },
         { status: 400 }
       )
     }

@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+/**
+ * Escape HTML special characters to prevent XSS in HTML export.
+ */
+function escapeHtml(str: string | null | undefined): string {
+  if (str == null) return ''
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -112,7 +125,7 @@ export async function GET(request: NextRequest) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>URL Comparison Report - ${job.name || 'Untitled'}</title>
+    <title>URL Comparison Report - ${escapeHtml(job.name || 'Untitled')}</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         .header { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
@@ -135,10 +148,10 @@ export async function GET(request: NextRequest) {
 <body>
     <div class="header">
         <h1>URL Comparison Report</h1>
-        <h2>${job.name || 'Untitled'}</h2>
-        <p>Job ID: ${job.id}</p>
+        <h2>${escapeHtml(job.name || 'Untitled')}</h2>
+        <p>Job ID: ${escapeHtml(job.id)}</p>
         <p>Created: ${new Date(job.createdAt).toLocaleString()}</p>
-        <p>New Domain: ${job.newDomain}</p>
+        <p>New Domain: ${escapeHtml(job.newDomain)}</p>
     </div>
 
     <div class="summary">
@@ -182,13 +195,13 @@ export async function GET(request: NextRequest) {
         <tbody>
             ${results.map(r => `
                 <tr>
-                    <td>${r.sourceUrl}</td>
-                    <td>${r.newUrl}</td>
+                    <td>${escapeHtml(r.sourceUrl)}</td>
+                    <td>${escapeHtml(r.newUrl)}</td>
                     <td>${r.statusCode || '-'}</td>
                     <td class="status-${r.result.toLowerCase()}">${r.result}</td>
-                    <td>${r.finalUrl || '-'}</td>
-                    <td class="redirect-chain">${r.redirectChain.length > 0 ? r.redirectChain.join(' → ') : '-'}</td>
-                    <td class="error">${r.error || '-'}</td>
+                    <td>${escapeHtml(r.finalUrl || '-')}</td>
+                    <td class="redirect-chain">${r.redirectChain.length > 0 ? r.redirectChain.map((c: string) => escapeHtml(c)).join(' → ') : '-'}</td>
+                    <td class="error">${escapeHtml(r.error || '-')}</td>
                     <td>${r.retryCount}</td>
                     <td>${new Date(r.checkedAt).toLocaleString()}</td>
                 </tr>

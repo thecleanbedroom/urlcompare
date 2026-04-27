@@ -3,6 +3,8 @@
  * Uses BFS (breadth-first search) to traverse links
  */
 
+import { isUrlSafe } from './urlChecker'
+
 export interface CrawlerOptions {
     maxPages: number;
     maxDepth: number;
@@ -119,6 +121,12 @@ export class DomainCrawler {
     }
 
     private async fetchPage(url: string): Promise<string> {
+        // SSRF protection — check before fetching
+        const urlCheck = isUrlSafe(url)
+        if (!urlCheck.safe) {
+            throw new Error(`URL blocked: ${urlCheck.reason}`)
+        }
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 

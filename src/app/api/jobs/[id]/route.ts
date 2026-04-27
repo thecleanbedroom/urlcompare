@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-interface Params {
-  params: {
-    id: string;
-  };
-}
-
-export async function DELETE(_: Request, { params }: Params) {
-  const { id } = params;
+export async function DELETE(
+  _: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
 
   try {
     // First, check if the job exists
@@ -46,18 +43,18 @@ export async function DELETE(_: Request, { params }: Params) {
 }
 
 // Return 405 Method Not Allowed for other HTTP methods
-export function GET() {
+export async function GET() {
   return new NextResponse(null, { status: 405 });
 }
 
-export function POST() {
+export async function POST() {
   return new NextResponse(null, { status: 405 });
 }
 
-export function PUT() {
+export async function PUT() {
   return new NextResponse(null, { status: 405 });
 }
 
-export function PATCH() {
+export async function PATCH() {
   return new NextResponse(null, { status: 405 });
 }

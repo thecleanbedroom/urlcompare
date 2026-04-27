@@ -18,41 +18,41 @@ Each task is a self-contained unit of work. Tasks within a phase should be compl
 
 **Commit message:** `fix: XSS in HTML export, Next.js 16 params typing, SSRF protection`
 
-- [ ] **1.1 — Fix XSS in HTML Export**
-  - [ ] Add `escapeHtml()` utility function at top of `src/app/api/export/route.ts`
-  - [ ] Apply `escapeHtml()` to `job.name` in HTML template
-  - [ ] Apply `escapeHtml()` to `job.id` in HTML template
-  - [ ] Apply `escapeHtml()` to `job.newDomain` in HTML template
-  - [ ] Apply `escapeHtml()` to `r.sourceUrl` in HTML table rows
-  - [ ] Apply `escapeHtml()` to `r.newUrl` in HTML table rows
-  - [ ] Apply `escapeHtml()` to `r.finalUrl` in HTML table rows
-  - [ ] Apply `escapeHtml()` to `r.error` in HTML table rows
-  - [ ] Apply `escapeHtml()` to redirect chain entries in HTML table rows
-  - [ ] Verify: export an HTML report containing `<script>alert(1)</script>` in a URL — must render as text
+- [x] **1.1 — Fix XSS in HTML Export**
+  - [x] Add `escapeHtml()` utility function at top of `src/app/api/export/route.ts`
+  - [x] Apply `escapeHtml()` to `job.name` in HTML template
+  - [x] Apply `escapeHtml()` to `job.id` in HTML template
+  - [x] Apply `escapeHtml()` to `job.newDomain` in HTML template
+  - [x] Apply `escapeHtml()` to `r.sourceUrl` in HTML table rows
+  - [x] Apply `escapeHtml()` to `r.newUrl` in HTML table rows
+  - [x] Apply `escapeHtml()` to `r.finalUrl` in HTML table rows
+  - [x] Apply `escapeHtml()` to `r.error` in HTML table rows
+  - [x] Apply `escapeHtml()` to redirect chain entries in HTML table rows
+  - [x] Verify: export an HTML report containing `<script>alert(1)</script>` in a URL — must render as text
 
-- [ ] **1.2 — Fix `api/jobs/[id]` Params Typing for Next.js 16**
-  - [ ] Update `DELETE` handler params to `Promise<{ id: string }>` and `await params`
-  - [ ] Remove old `Params` interface
-  - [ ] Update `GET`, `POST`, `PUT`, `PATCH` stub signatures for consistency
-  - [ ] Verify: `npx tsc --noEmit` reports zero errors (ignore pre-existing warnings)
+- [x] **1.2 — Fix `api/jobs/[id]` Params Typing for Next.js 16**
+  - [x] Update `DELETE` handler params to `Promise<{ id: string }>` and `await params`
+  - [x] Remove old `Params` interface
+  - [x] Update `GET`, `POST`, `PUT`, `PATCH` stub signatures for consistency
+  - [x] Verify: `npx tsc --noEmit` reports zero errors (ignore pre-existing warnings)
 
-- [ ] **1.3 — Add SSRF Protection on URL Input**
-  - [ ] Create `isPrivateIPv4(hostname)` helper in `src/lib/urlChecker.ts`
-    - [ ] Block `127.x.x.x` (loopback)
-    - [ ] Block `10.x.x.x` (RFC 1918)
-    - [ ] Block `192.168.x.x` (RFC 1918)
-    - [ ] Block `172.16.0.0 – 172.31.255.255` only (NOT all `172.x`) — parse second octet
-    - [ ] Block `169.254.x.x` (link-local + AWS metadata)
-    - [ ] Block `localhost` and `[::1]`
-  - [ ] Create `isUrlSafe(url)` export wrapping `isPrivateIPv4` + protocol check (HTTP/HTTPS only)
-  - [ ] Call `isUrlSafe()` in `checkUrlStatus()` before fetching
-  - [ ] Call `isUrlSafe()` in `comparison/route.ts` during URL validation
-  - [ ] Call `isUrlSafe()` in `crawler.ts` `fetchPage()` before fetching
-  - [ ] Verify: attempt comparison with `http://169.254.169.254/latest/meta-data/` — must be rejected
+- [x] **1.3 — Add SSRF Protection on URL Input**
+  - [x] Create `isPrivateIPv4(hostname)` helper in `src/lib/urlChecker.ts`
+    - [x] Block `127.x.x.x` (loopback)
+    - [x] Block `10.x.x.x` (RFC 1918)
+    - [x] Block `192.168.x.x` (RFC 1918)
+    - [x] Block `172.16.0.0 – 172.31.255.255` only (NOT all `172.x`) — parse second octet
+    - [x] Block `169.254.x.x` (link-local + AWS metadata)
+    - [x] Block `localhost` and `[::1]`
+  - [x] Create `isUrlSafe(url)` export wrapping `isPrivateIPv4` + protocol check (HTTP/HTTPS only)
+  - [x] Call `isUrlSafe()` in `checkUrlStatus()` before fetching
+  - [x] Call `isUrlSafe()` in `comparison/route.ts` during URL validation
+  - [x] Call `isUrlSafe()` in `crawler.ts` `fetchPage()` before fetching
+  - [x] Verify: attempt comparison with `http://169.254.169.254/latest/meta-data/` — must be rejected
 
-- [ ] **1.4 — Conditional Prisma Query Logging**
-  - [ ] Change `db.ts` to use `PRISMA_DEBUG === 'true'` instead of unconditional `['query']`
-  - [ ] Verify: start server without `PRISMA_DEBUG` set — no SQL output in stdout
+- [x] **1.4 — Conditional Prisma Query Logging**
+  - [x] Change `db.ts` to use `PRISMA_DEBUG === 'true'` instead of unconditional `['query']`
+  - [x] Verify: start server without `PRISMA_DEBUG` set — no SQL output in stdout
 
 - [ ] **Phase 1 gate: commit & verify**
   - [ ] `npx tsc --noEmit` passes
