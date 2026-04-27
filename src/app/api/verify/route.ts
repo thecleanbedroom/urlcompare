@@ -7,13 +7,13 @@ interface VerifyRequest {
     resultId: string
     sourceUrl: string
     newDomain: string
-    overrideToken?: string
+    useOverrideToken?: boolean
 }
 
 export async function POST(request: NextRequest) {
     try {
         const body: VerifyRequest = await request.json()
-        const { resultId, sourceUrl, newDomain, overrideToken } = body
+        const { resultId, sourceUrl, newDomain, useOverrideToken } = body
 
         // Validate input
         if (!resultId || !sourceUrl || !newDomain) {
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
             followRedirects: true,
             retryAttempts: 3,
             timeoutSeconds: 10,
-            overrideToken
+            useOverrideToken
         })
 
         // Update database record

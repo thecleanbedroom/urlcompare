@@ -136,10 +136,10 @@ Each task is a self-contained unit of work. Tasks within a phase should be compl
   - [x] Run `npx prisma generate`
   - [x] Verify: app starts and existing data is preserved
 
-- [ ] **Phase 3 gate: commit & verify**
-  - [ ] `npx tsc --noEmit` passes
-  - [ ] `npm run dev` starts without errors
-  - [ ] Git commit: `refactor: harden data model, add lastError to ComparisonJob, JSON helpers`
+- [x] **Phase 3 gate: commit & verify**
+  - [x] `npx tsc --noEmit` passes
+  - [x] `npm run dev` starts without errors
+  - [x] Git commit: `refactor: harden data model, add lastError to ComparisonJob, JSON helpers`
 
 ---
 
@@ -147,59 +147,59 @@ Each task is a self-contained unit of work. Tasks within a phase should be compl
 
 **Commit message:** `feat: full redirect chain detection, comparison cancellation, API improvements`
 
-- [ ] **4.1 — Fix Redirect Chain Detection**
-  - [ ] Rewrite `checkUrlStatus()` in `src/lib/urlChecker.ts` to use manual redirect follow loop
-    - [ ] Use `redirect: 'manual'` in fetch
-    - [ ] Follow `Location` header through 301/302/303/307/308 responses
-    - [ ] Resolve relative redirect URLs with `new URL(location, currentUrl)`
-    - [ ] Cap at 10 hops maximum
-    - [ ] Build `redirectChain` array with all intermediate URLs
-  - [ ] Add `signal?: AbortSignal` to `CheckUrlConfig` interface
-  - [ ] Compose timeout controller with external signal using `AbortSignal.any()`
-  - [ ] Store redirect chain using `toJsonString()` (from Phase 3.3)
-  - [ ] Verify: test against a URL with known multi-hop redirects — chain captures all hops
+- [x] **4.1 — Fix Redirect Chain Detection**
+  - [x] Rewrite `checkUrlStatus()` in `src/lib/urlChecker.ts` to use manual redirect follow loop
+    - [x] Use `redirect: 'manual'` in fetch
+    - [x] Follow `Location` header through 301/302/303/307/308 responses
+    - [x] Resolve relative redirect URLs with `new URL(location, currentUrl)`
+    - [x] Cap at 10 hops maximum
+    - [x] Build `redirectChain` array with all intermediate URLs
+  - [x] Add `signal?: AbortSignal` to `CheckUrlConfig` interface
+  - [x] Compose timeout controller with external signal using `AbortSignal.any()`
+  - [x] Store redirect chain using `toJsonString()` (from Phase 3.3)
+  - [x] Verify: test against a URL with known multi-hop redirects — chain captures all hops
 
-- [ ] **4.2 — Add Comparison Job Cancellation**
-  - [ ] Add `activeComparisons` Map at module level in `comparison/route.ts`
-  - [ ] Create `AbortController` at start of `processComparisonJob`, store in map
-  - [ ] Pass signal to `checkUrlStatus` calls via `config.signal`
-  - [ ] Check `signal.aborted` between batches, exit early if aborted
-  - [ ] Clean up map entry in `finally` block
-  - [ ] Add `DELETE` handler to `comparison/route.ts`
-    - [ ] Accept `jobId` query param
-    - [ ] Abort the controller and remove from map
-    - [ ] Update job status to `cancelled` in DB
-  - [ ] Add "Cancel" button to progress UI in `page.tsx`
-  - [ ] Verify: start a large comparison, cancel mid-run — job status shows `cancelled`
+- [x] **4.2 — Add Comparison Job Cancellation**
+  - [x] Add `activeComparisons` Map at module level in `comparison/route.ts`
+  - [x] Create `AbortController` at start of `processComparisonJob`, store in map
+  - [x] Pass signal to `checkUrlStatus` calls via `config.signal`
+  - [x] Check `signal.aborted` between batches, exit early if aborted
+  - [x] Clean up map entry in `finally` block
+  - [x] Add `DELETE` handler to `comparison/route.ts`
+    - [x] Accept `jobId` query param
+    - [x] Abort the controller and remove from map
+    - [x] Update job status to `cancelled` in DB
+  - [x] Add "Cancel" button to progress UI in `page.tsx`
+  - [x] Verify: start a large comparison, cancel mid-run — job status shows `cancelled`
 
-- [ ] **4.3 — Move Override Token to Environment Variable**
-  - [ ] Create `.env.example` file with `DATABASE_URL`, `PRISMA_DEBUG`, `EDGE_OVERRIDE_TOKEN`
-  - [ ] Change `CheckUrlConfig.overrideToken` to `useOverrideToken: boolean`
-  - [ ] Update `checkUrlStatus()` to read `process.env.EDGE_OVERRIDE_TOKEN` when `useOverrideToken` is true
-  - [ ] Update `crawler.ts` `CrawlerOptions` the same way
-  - [ ] Update `comparison/route.ts` to pass `useOverrideToken` boolean
-  - [ ] Update `verify/route.ts` to pass `useOverrideToken` boolean
-  - [ ] Update `crawl/route.ts` to pass `useOverrideToken` boolean
-  - [ ] Update `page.tsx`: replace password input with checkbox toggle
-  - [ ] Update `CrawlForm.tsx`: accept `useOverrideToken` boolean prop instead of string
-  - [ ] Verify: set `EDGE_OVERRIDE_TOKEN` in `.env`, toggle checkbox — header is sent
+- [x] **4.3 — Move Override Token to Environment Variable**
+  - [x] Create `.env.example` file with `DATABASE_URL`, `PRISMA_DEBUG`, `EDGE_OVERRIDE_TOKEN`
+  - [x] Change `CheckUrlConfig.overrideToken` to `useOverrideToken: boolean`
+  - [x] Update `checkUrlStatus()` to read `process.env.EDGE_OVERRIDE_TOKEN` when `useOverrideToken` is true
+  - [x] Update `crawler.ts` `CrawlerOptions` the same way
+  - [x] Update `comparison/route.ts` to pass `useOverrideToken` boolean
+  - [x] Update `verify/route.ts` to pass `useOverrideToken` boolean
+  - [x] Update `crawl/route.ts` to pass `useOverrideToken` boolean
+  - [x] Update `page.tsx`: replace password input with checkbox toggle
+  - [x] Update `CrawlForm.tsx`: accept `useOverrideToken` boolean prop instead of string
+  - [x] Verify: set `EDGE_OVERRIDE_TOKEN` in `.env`, toggle checkbox — header is sent
 
-- [ ] **4.4 — Persist Error Context on Comparison Failure**
-  - [ ] Ensure catch block in `processComparisonJob` writes to `lastError` field (depends on 3.1)
-  - [ ] Display `lastError` in the UI when job status is `failed`
-  - [ ] Verify: trigger a job failure — error message is visible in UI
+- [x] **4.4 — Persist Error Context on Comparison Failure**
+  - [x] Ensure catch block in `processComparisonJob` writes to `lastError` field (depends on 3.1)
+  - [x] Display `lastError` in the UI when job status is `failed`
+  - [x] Verify: trigger a job failure — error message is visible in UI
 
-- [ ] **4.5 — Fix Error Handling in Jobs API**
-  - [ ] Change `GET /api/jobs` catch block to return `{ error: '...' }` with status 500
-  - [ ] Update `jobs/page.tsx` `fetchJobs()` to check `response.ok` before parsing
-  - [ ] Verify: simulate DB error — user sees error message, not empty list
+- [x] **4.5 — Fix Error Handling in Jobs API**
+  - [x] Change `GET /api/jobs` catch block to return `{ error: '...' }` with status 500
+  - [x] Update `jobs/page.tsx` `fetchJobs()` to check `response.ok` before parsing
+  - [x] Verify: simulate DB error — user sees error message, not empty list
 
-- [ ] **4.6 — Move Database Init Out of Module Import**
-  - [ ] Remove `ensureDatabaseExists()` call from `src/lib/db.ts` module body
-  - [ ] Remove `ensureDatabaseExists()` function definition
-  - [ ] Remove `dbInitialized` global flag
-  - [ ] Add `"predev"` and/or `"prestart"` script in `package.json` for `prisma db push`
-  - [ ] Verify: delete `prisma/db/custom.db`, run `npm run dev` — DB is created by predev script
+- [x] **4.6 — Move Database Init Out of Module Import**
+  - [x] Remove `ensureDatabaseExists()` call from `src/lib/db.ts` module body
+  - [x] Remove `ensureDatabaseExists()` function definition
+  - [x] Remove `dbInitialized` global flag
+  - [x] Add `"predev"` and/or `"prestart"` script in `package.json` for `prisma db push`
+  - [x] Verify: delete `prisma/db/custom.db`, run `npm run dev` — DB is created by predev script
 
 - [ ] **Phase 4 gate: commit & verify**
   - [ ] `npx tsc --noEmit` passes

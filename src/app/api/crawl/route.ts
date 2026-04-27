@@ -11,7 +11,7 @@ interface StartCrawlRequest {
     delayMs?: number;
     includePatterns?: string[];
     excludePatterns?: string[];
-    overrideToken?: string;
+    useOverrideToken?: boolean;
 }
 
 // Store active crawl abort controllers
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
             delayMs: body.delayMs || 200,
             includePatterns: body.includePatterns,
             excludePatterns: body.excludePatterns,
-            overrideToken: body.overrideToken,
+            useOverrideToken: body.useOverrideToken,
         });
 
         return NextResponse.json({
@@ -217,7 +217,7 @@ async function startCrawlInBackground(
         delayMs: number;
         includePatterns?: string[];
         excludePatterns?: string[];
-        overrideToken?: string;
+        useOverrideToken?: boolean;
     }
 ) {
     const controller = new AbortController();

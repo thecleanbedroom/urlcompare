@@ -44,7 +44,7 @@ function HomeContent() {
   const [maxConcurrency, setMaxConcurrency] = useState(10)
   const [retryAttempts, setRetryAttempts] = useState(3)
   const [timeoutSeconds, setTimeoutSeconds] = useState(10)
-  const [overrideToken, setOverrideToken] = useState('')
+  const [useOverrideToken, setUseOverrideToken] = useState(false)
   const [results, setResults] = useState<UrlResult[]>([])
   const [summary, setSummary] = useState<JobSummary | null>(null)
   const [isRunning, setIsRunning] = useState(false)
@@ -125,9 +125,17 @@ function HomeContent() {
           setResults(responseData.results || []);
           setSummary(responseData.summary);
           setProgress(100);
+        } else if (job.status === 'failed') {
+          console.log('7. Job has failed');
+          setError(job.lastError ? `Job failed: ${job.lastError}` : 'Job failed');
+          setResults(responseData.results || []);
+          setSummary(responseData.summary);
         } else if (job.status === 'running') {
           console.log('7. Job is running, starting polling');
+          setIsRunning(true);
           await pollForCompletion(job.id);
+        } else if (job.status === 'cancelled') {
+          setError('Job was cancelled');
         }
       } catch (err) {
         if (isMounted) {
@@ -202,7 +210,8 @@ function HomeContent() {
           setProgress(100);
           return true;
         } else if (job.status === 'failed') {
-          throw new Error('Job failed to complete');
+          const failMsg = job.lastError ? `Job failed: ${job.lastError}` : 'Job failed to complete'
+          throw new Error(failMsg);
         } else {
           // Check for timeout
           if (Date.now() - startTime > maxPollTime) {
@@ -263,7 +272,7 @@ function HomeContent() {
           sourceUrls: urls,
           newDomain,
           name: jobName || undefined,
-          config: { followRedirects, maxConcurrency, retryAttempts, timeoutSeconds, overrideToken: overrideToken.trim() || undefined },
+          config: { followRedirects, maxConcurrency, retryAttempts, timeoutSeconds, useOverrideToken: useOverrideToken || undefined },
         }),
       })
 
@@ -359,6 +368,17 @@ function HomeContent() {
     )
   }
 
+  const cancelJob = async () => {
+    if (!jobId) return
+    try {
+      await fetch(`/api/comparison?jobId=${jobId}`, { method: 'DELETE' })
+      setIsRunning(false)
+      setError('Comparison cancelled')
+    } catch (err) {
+      console.error('Error cancelling job:', err)
+    }
+  }
+
   const retryVerification = async (result: UrlResult) => {
     if (!result.id) {
       console.error('Cannot retry result without ID')
@@ -376,7 +396,7 @@ function HomeContent() {
           resultId: resultId,
           sourceUrl: result.sourceUrl,
           newDomain: newDomain,
-          overrideToken: overrideToken.trim() || undefined
+          useOverrideToken: useOverrideToken || undefined
         })
       })
 
@@ -571,7 +591,7 @@ function HomeContent() {
                 </TabsList>
 
                 <TabsContent value="scan" className="pt-4">
-                  <CrawlForm onComplete={handleCrawlComplete} overrideToken={overrideToken} />
+                  <CrawlForm onComplete={handleCrawlComplete} useOverrideToken={useOverrideToken} />
                 </TabsContent>
 
                 <TabsContent value="manual" className="pt-4 space-y-4">
@@ -685,19 +705,22 @@ https://oldsite.com/products/item1"
               </Tabs>
 
               <div className="space-y-2">
-                <Label htmlFor="overrideToken" className="text-sm flex items-center gap-1">
+                <Label htmlFor="useOverrideToken" className="text-sm flex items-center gap-1">
                   <Shield className="h-3.5 w-3.5" />
                   Edge Override Token
                 </Label>
-                <Input
-                  id="overrideToken"
-                  type="password"
-                  value={overrideToken}
-                  onChange={(e) => setOverrideToken(e.target.value)}
-                  placeholder="Optional – bypasses Cloudflare edge redirects"
-                />
+                <div className="flex items-center space-x-2">
+                  <input
+                    id="useOverrideToken"
+                    type="checkbox"
+                    checked={useOverrideToken}
+                    onChange={(e) => setUseOverrideToken(e.target.checked)}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{useOverrideToken ? 'Enabled' : 'Disabled'}</span>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Sends <code className="text-xs">X-EdgeRedirect-Override</code> header to force redirect processing at the origin
+                  Sends <code className="text-xs">X-EdgeRedirect-Override</code> header (token from <code>.env</code>) to force redirect processing at the origin
                 </p>
               </div>
             </CardContent>
@@ -720,6 +743,14 @@ https://oldsite.com/products/item1"
                     </div>
                     <Progress value={progress} />
                   </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={cancelJob}
+                    className="mt-2"
+                  >
+                    Cancel
+                  </Button>
                 </div>
               </CardContent>
             </Card>

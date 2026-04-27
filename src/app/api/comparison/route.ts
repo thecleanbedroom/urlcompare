@@ -17,10 +17,13 @@ interface ComparisonRequest {
     maxConcurrency?: number
     retryAttempts?: number
     timeoutSeconds?: number
-    overrideToken?: string
+    useOverrideToken?: boolean
   }
   name?: string
 }
+
+// Store active comparison abort controllers for cancellation
+const activeComparisons = new Map<string, AbortController>()
 
 export async function POST(request: NextRequest) {
   try {
@@ -168,6 +171,48 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * DELETE /api/comparison?jobId=X - Cancel a running comparison job
+ */
+export async function DELETE(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const jobId = searchParams.get('jobId')
+
+  if (!jobId) {
+    return NextResponse.json(
+      { error: 'jobId is required' },
+      { status: 400 }
+    )
+  }
+
+  try {
+    // Abort the active comparison if running
+    const controller = activeComparisons.get(jobId)
+    if (controller) {
+      controller.abort()
+      activeComparisons.delete(jobId)
+    }
+
+    // Update job status in database
+    await db.comparisonJob.update({
+      where: { id: jobId },
+      data: { status: 'cancelled' }
+    })
+
+    return NextResponse.json({
+      jobId,
+      status: 'cancelled',
+      message: 'Comparison job cancelled'
+    })
+  } catch (error) {
+    console.error('Error cancelling comparison job:', error)
+    return NextResponse.json(
+      { error: 'Failed to cancel comparison job' },
+      { status: 500 }
+    )
+  }
+}
+
 async function processComparisonJob(
   jobId: string,
   sourceUrls: string[],
@@ -179,8 +224,11 @@ async function processComparisonJob(
     maxConcurrency = 10,
     retryAttempts = 3,
     timeoutSeconds = 10,
-    overrideToken
+    useOverrideToken = false
   } = config
+
+  const controller = new AbortController()
+  activeComparisons.set(jobId, controller)
 
   try {
     // Update job status to running
@@ -194,6 +242,11 @@ async function processComparisonJob(
 
     // Process URLs in batches
     for (let i = 0; i < sourceUrls.length; i += maxConcurrency) {
+      // Check for cancellation between batches
+      if (controller.signal.aborted) {
+        break
+      }
+
       const batch = sourceUrls.slice(i, i + maxConcurrency)
 
       const batchPromises = batch.map(async (sourceUrl) => {
@@ -201,7 +254,7 @@ async function processComparisonJob(
           const result = await checkUrlStatus(
             sourceUrl,
             newDomain,
-            { followRedirects, retryAttempts, timeoutSeconds, overrideToken }
+            { followRedirects, retryAttempts, timeoutSeconds, useOverrideToken, signal: controller.signal }
           )
           return result
         } catch (err) {
@@ -251,21 +304,28 @@ async function processComparisonJob(
       })
     }
 
-    // Final status update
-    await db.comparisonJob.update({
-      where: { id: jobId },
-      data: { status: 'completed' }
-    })
+    // Final status update (only if not cancelled)
+    if (!controller.signal.aborted) {
+      await db.comparisonJob.update({
+        where: { id: jobId },
+        data: { status: 'completed' }
+      })
+    }
 
   } catch (error) {
-    console.error(`Error processing job ${jobId}:`, error)
-    await db.comparisonJob.update({
-      where: { id: jobId },
-      data: {
-        status: 'failed',
-        lastError: error instanceof Error ? error.message : String(error)
-      }
-    })
+    // Don't update status if job was cancelled
+    if (!controller.signal.aborted) {
+      console.error(`Error processing job ${jobId}:`, error)
+      await db.comparisonJob.update({
+        where: { id: jobId },
+        data: {
+          status: 'failed',
+          lastError: error instanceof Error ? error.message : String(error)
+        }
+      })
+    }
+  } finally {
+    activeComparisons.delete(jobId)
   }
 }
 

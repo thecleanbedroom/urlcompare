@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
+import { join } from 'path'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -12,7 +13,6 @@ function getDatabaseConfig(): { url: string } {
   if (match) {
     const relativePath = match[1]
     // Resolve relative to the prisma directory
-    const { join } = require('path')
     return { url: join(process.cwd(), 'prisma', relativePath) }
   }
   return { url }

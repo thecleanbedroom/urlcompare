@@ -19,7 +19,9 @@ export async function GET() {
     return NextResponse.json(jobs);
   } catch (error) {
     console.error('Error fetching jobs:', error);
-    // Return empty array on error - an empty job history is a valid state
-    return NextResponse.json([]);
+    return NextResponse.json(
+      { error: 'Failed to fetch jobs' },
+      { status: 500 }
+    );
   }
 }

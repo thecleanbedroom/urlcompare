@@ -19,7 +19,7 @@ export interface CheckUrlConfig {
     followRedirects?: boolean
     retryAttempts?: number
     timeoutSeconds?: number
-    overrideToken?: string
+    useOverrideToken?: boolean
     signal?: AbortSignal
 }
 
@@ -105,7 +105,8 @@ export function constructNewUrl(path: string, domain: string): string {
 }
 
 /**
- * Check the status of a URL on the new domain
+ * Check the status of a URL on the new domain.
+ * Uses manual redirect following to capture the full redirect chain.
  */
 export async function checkUrlStatus(
     sourceUrl: string,
@@ -116,8 +117,12 @@ export async function checkUrlStatus(
         followRedirects = true,
         retryAttempts = 3,
         timeoutSeconds = 10,
-        overrideToken
+        useOverrideToken = false,
+        signal: externalSignal
     } = config
+
+    // Resolve override token from environment if enabled
+    const overrideToken = useOverrideToken ? (process.env.EDGE_OVERRIDE_TOKEN || '') : ''
 
     let retryCount = 0
     let lastError: string | undefined
@@ -143,53 +148,85 @@ export async function checkUrlStatus(
                 }
             }
 
-            const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), timeoutSeconds * 1000)
-
             const headers: Record<string, string> = {}
             if (overrideToken) {
                 headers['X-EdgeRedirect-Override'] = overrideToken
             }
 
-            const response = await fetch(newUrl, {
-                method: 'GET',
-                signal: controller.signal,
-                redirect: followRedirects ? 'follow' : 'manual',
-                headers
-            })
-
-            clearTimeout(timeoutId)
-
             const redirectChain: string[] = []
-            let finalUrl = newUrl
+            let currentUrl = newUrl
+            let finalStatusCode: number = 200
+            const MAX_HOPS = 10
 
-            if (response.redirected) {
-                const finalResponse = await fetch(newUrl, {
+            if (followRedirects) {
+                // Manual redirect follow loop
+                for (let hop = 0; hop < MAX_HOPS; hop++) {
+                    const controller = new AbortController()
+                    const timeoutId = setTimeout(() => controller.abort(), timeoutSeconds * 1000)
+
+                    // Compose external signal with timeout controller
+                    let combinedSignal: AbortSignal = controller.signal
+                    if (externalSignal) {
+                        combinedSignal = AbortSignal.any([controller.signal, externalSignal])
+                    }
+
+                    const response = await fetch(currentUrl, {
+                        method: 'GET',
+                        signal: combinedSignal,
+                        redirect: 'manual',
+                        headers
+                    })
+
+                    clearTimeout(timeoutId)
+                    finalStatusCode = response.status
+
+                    // Check for redirect status codes
+                    if ([301, 302, 303, 307, 308].includes(response.status)) {
+                        const location = response.headers.get('location')
+                        if (location) {
+                            // Resolve relative redirect URLs
+                            const resolvedUrl = new URL(location, currentUrl).href
+                            redirectChain.push(resolvedUrl)
+                            currentUrl = resolvedUrl
+                            continue
+                        }
+                    }
+
+                    // Not a redirect — we've reached the final destination
+                    break
+                }
+            } else {
+                // No redirect following — single fetch
+                const controller = new AbortController()
+                const timeoutId = setTimeout(() => controller.abort(), timeoutSeconds * 1000)
+
+                let combinedSignal: AbortSignal = controller.signal
+                if (externalSignal) {
+                    combinedSignal = AbortSignal.any([controller.signal, externalSignal])
+                }
+
+                const response = await fetch(currentUrl, {
                     method: 'GET',
+                    signal: combinedSignal,
                     redirect: 'manual',
                     headers
                 })
 
-                if (finalResponse.status === 301 || finalResponse.status === 302 || finalResponse.status === 307 || finalResponse.status === 308) {
-                    const location = finalResponse.headers.get('location')
-                    if (location) {
-                        redirectChain.push(location)
-                        finalUrl = location
-                    }
-                }
+                clearTimeout(timeoutId)
+                finalStatusCode = response.status
             }
 
             let result: 'OK' | 'Missing' | 'Error' | 'Redirected' = 'OK'
-            if (response.status === 404) result = 'Missing'
-            if (response.status >= 400) result = 'Error'
+            if (finalStatusCode === 404) result = 'Missing'
+            else if (finalStatusCode >= 400) result = 'Error'
             if (redirectChain.length > 0) result = 'Redirected'
 
             return {
                 sourceUrl,
                 newUrl,
-                statusCode: response.status,
+                statusCode: finalStatusCode,
                 redirectChain,
-                finalUrl,
+                finalUrl: redirectChain.length > 0 ? redirectChain[redirectChain.length - 1] : newUrl,
                 result,
                 retryCount,
                 checkedAt: new Date().toISOString()
