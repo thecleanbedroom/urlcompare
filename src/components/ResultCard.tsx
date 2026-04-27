@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CheckCircle, XCircle, AlertCircle, RefreshCw, ExternalLink } from 'lucide-react'
+import { safeParseJson } from '@/lib/json'
 
 interface UrlResult {
     id?: string
@@ -145,18 +146,14 @@ export function ResultCard({ result, onRetry, isRetrying }: ResultCardProps) {
 
                 {/* Redirect chain if present */}
                 {result.redirectChain && (() => {
-                    try {
                         const chain = typeof result.redirectChain === 'string'
-                            ? JSON.parse(result.redirectChain)
+                            ? safeParseJson<string[]>(result.redirectChain, [])
                             : result.redirectChain
                         return Array.isArray(chain) && chain.length > 0 ? (
                             <div className="text-sm text-muted-foreground">
                                 Redirect Chain: {chain.join(' → ')}
                             </div>
                         ) : null
-                    } catch {
-                        return null
-                    }
                 })()}
 
                 {/* Error message if present */}

@@ -21,6 +21,7 @@ model ComparisonJob {
   status      String   @default("pending") // pending, running, completed, failed
   totalUrls   Int      @default(0)
   completedUrls Int    @default(0)
+  lastError   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   urlResults  UrlResult[]
@@ -61,6 +62,7 @@ model UrlResult {
   error            String?
   retryCount       Int      @default(0)
   checkedAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
   
   job              ComparisonJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
   

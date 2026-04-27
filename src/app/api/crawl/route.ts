@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { processCrawlJob } from '@/lib/crawler';
+import { safeParseJson, toJsonString } from '@/lib/json';
 
 interface StartCrawlRequest {
     sourceDomain: string;
@@ -49,8 +50,8 @@ export async function POST(request: NextRequest) {
                 maxPages: body.maxPages || 500,
                 maxDepth: body.maxDepth || 10,
                 delayMs: body.delayMs || 200,
-                includePatterns: body.includePatterns ? JSON.stringify(body.includePatterns) : null,
-                excludePatterns: body.excludePatterns ? JSON.stringify(body.excludePatterns) : null,
+                includePatterns: body.includePatterns ? toJsonString(body.includePatterns) : null,
+                excludePatterns: body.excludePatterns ? toJsonString(body.excludePatterns) : null,
                 status: 'pending',
             },
         });
@@ -129,11 +130,7 @@ export async function GET(request: NextRequest) {
         // Parse discovered URLs if available
         let discoveredUrls: string[] = [];
         if (job.discoveredUrls) {
-            try {
-                discoveredUrls = JSON.parse(job.discoveredUrls);
-            } catch {
-                discoveredUrls = [];
-            }
+            discoveredUrls = safeParseJson<string[]>(job.discoveredUrls, []);
         }
 
         return NextResponse.json({
@@ -243,7 +240,7 @@ async function startCrawlInBackground(
                 if (data.lastError !== undefined) updateData.lastError = data.lastError;
                 if (data.errorCount !== undefined) updateData.errorCount = data.errorCount;
                 if (data.discoveredUrls !== undefined) {
-                    updateData.discoveredUrls = JSON.stringify(data.discoveredUrls);
+                    updateData.discoveredUrls = toJsonString(data.discoveredUrls);
                 }
                 if (data.status === 'completed' || data.status === 'failed') {
                     updateData.completedAt = new Date();

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { toJsonString } from '@/lib/json'
 import {
   checkUrlStatus,
   extractPath,
@@ -86,9 +87,9 @@ export async function POST(request: NextRequest) {
     const job = await db.comparisonJob.create({
       data: {
         name: name || `Comparison ${new Date().toISOString()}`,
-        sourceUrls: JSON.stringify(validUrls),
+        sourceUrls: toJsonString(validUrls),
         newDomain,
-        config: JSON.stringify(config),
+        config: toJsonString(config),
         totalUrls: validUrls.length,
         status: 'pending'
       }
@@ -229,7 +230,7 @@ async function processComparisonJob(
           sourceUrl: result.sourceUrl,
           newUrl: result.newUrl,
           statusCode: result.statusCode,
-          redirectChain: JSON.stringify(result.redirectChain),
+          redirectChain: toJsonString(result.redirectChain),
           finalUrl: result.finalUrl,
           result: result.result,
           error: result.error,
@@ -260,7 +261,10 @@ async function processComparisonJob(
     console.error(`Error processing job ${jobId}:`, error)
     await db.comparisonJob.update({
       where: { id: jobId },
-      data: { status: 'failed' }
+      data: {
+        status: 'failed',
+        lastError: error instanceof Error ? error.message : String(error)
+      }
     })
   }
 }

@@ -104,10 +104,10 @@ Each task is a self-contained unit of work. Tasks within a phase should be compl
   - [x] Update `package.json` dev script to truncate `dev.log` on each start (`: > dev.log && ...`)
   - [x] Verify: restart dev server, confirm `dev.log` starts fresh
 
-- [ ] **Phase 2 gate: commit & verify**
-  - [ ] `npm run build` succeeds
-  - [ ] `npm run dev` starts without errors
-  - [ ] Git commit: `chore: remove dead code, fix gitignore, audit dependencies`
+- [x] **Phase 2 gate: commit & verify**
+  - [x] `npm run build` succeeds
+  - [x] `npm run dev` starts without errors
+  - [x] Git commit: `chore: remove dead code, fix gitignore, audit dependencies`
 
 ---
 
@@ -115,26 +115,26 @@ Each task is a self-contained unit of work. Tasks within a phase should be compl
 
 **Commit message:** `refactor: harden data model, add lastError to ComparisonJob, JSON helpers`
 
-- [ ] **3.1 — Add `lastError` Field to ComparisonJob**
-  - [ ] Add `lastError String?` to `ComparisonJob` in `prisma/schema.prisma`
-  - [ ] Update `processComparisonJob` catch block in `comparison/route.ts` to write `lastError`
+- [x] **3.1 — Add `lastError` Field to ComparisonJob**
+  - [x] Add `lastError String?` to `ComparisonJob` in `prisma/schema.prisma`
+  - [x] Update `processComparisonJob` catch block in `comparison/route.ts` to write `lastError`
 
-- [ ] **3.2 — Add `updatedAt` to UrlResult**
-  - [ ] Add `updatedAt DateTime @updatedAt` to `UrlResult` in `prisma/schema.prisma`
+- [x] **3.2 — Add `updatedAt` to UrlResult**
+  - [x] Add `updatedAt DateTime @updatedAt` to `UrlResult` in `prisma/schema.prisma`
 
-- [ ] **3.3 — Create JSON Serialization Helpers**
-  - [ ] Create `src/lib/json.ts` with `safeParseJson<T>()` and `toJsonString()`
-  - [ ] Replace bare `JSON.parse()` in `src/app/api/comparison/route.ts` with `safeParseJson()`
-  - [ ] Replace bare `JSON.parse()` in `src/app/api/export/route.ts` with `safeParseJson()`
-  - [ ] Replace bare `JSON.parse()` in `src/app/api/crawl/route.ts` with `safeParseJson()`
-  - [ ] Replace bare `JSON.parse()` in `src/components/ResultCard.tsx` with `safeParseJson()`
-  - [ ] Replace bare `JSON.stringify()` for DB writes with `toJsonString()` where applicable
-  - [ ] Verify: corrupt a `redirectChain` value in DB to invalid JSON — app must not crash
+- [x] **3.3 — Create JSON Serialization Helpers**
+  - [x] Create `src/lib/json.ts` with `safeParseJson<T>()` and `toJsonString()`
+  - [x] Replace bare `JSON.parse()` in `src/app/api/comparison/route.ts` with `safeParseJson()`
+  - [x] Replace bare `JSON.parse()` in `src/app/api/export/route.ts` with `safeParseJson()`
+  - [x] Replace bare `JSON.parse()` in `src/app/api/crawl/route.ts` with `safeParseJson()`
+  - [x] Replace bare `JSON.parse()` in `src/components/ResultCard.tsx` with `safeParseJson()`
+  - [x] Replace bare `JSON.stringify()` for DB writes with `toJsonString()` where applicable
+  - [x] Verify: corrupt a `redirectChain` value in DB to invalid JSON — app must not crash
 
-- [ ] **3.4 — Run Schema Migration**
-  - [ ] Run `npx prisma db push` (dev) or generate migration files (prod)
-  - [ ] Run `npx prisma generate`
-  - [ ] Verify: app starts and existing data is preserved
+- [x] **3.4 — Run Schema Migration**
+  - [x] Run `npx prisma db push` (dev) or generate migration files (prod)
+  - [x] Run `npx prisma generate`
+  - [x] Verify: app starts and existing data is preserved
 
 - [ ] **Phase 3 gate: commit & verify**
   - [ ] `npx tsc --noEmit` passes

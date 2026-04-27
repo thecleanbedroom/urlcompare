@@ -5,7 +5,7 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-function getDatabasePath(): string {
+function getDatabaseConfig(): { url: string } {
   // DATABASE_URL format: "file:./db/custom.db" (relative to prisma directory)
   const url = process.env.DATABASE_URL ?? 'file:./db/database.sqlite'
   const match = url.match(/^file:(.+)$/)
@@ -13,15 +13,15 @@ function getDatabasePath(): string {
     const relativePath = match[1]
     // Resolve relative to the prisma directory
     const { join } = require('path')
-    return join(process.cwd(), 'prisma', relativePath)
+    return { url: join(process.cwd(), 'prisma', relativePath) }
   }
-  return url
+  return { url }
 }
 
 export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
-    adapter: new PrismaBetterSqlite3(getDatabasePath()),
+    adapter: new PrismaBetterSqlite3(getDatabaseConfig()),
     log: process.env.PRISMA_DEBUG === 'true' ? ['query'] : [],
   })
 

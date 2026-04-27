@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { safeParseJson } from '@/lib/json'
 
 /**
  * Escape HTML special characters to prevent XSS in HTML export.
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
       sourceUrl: result.sourceUrl,
       newUrl: result.newUrl,
       statusCode: result.statusCode,
-      redirectChain: JSON.parse(result.redirectChain || '[]'),
+      redirectChain: safeParseJson<string[]>(result.redirectChain, []),
       finalUrl: result.finalUrl,
       result: result.result,
       error: result.error,

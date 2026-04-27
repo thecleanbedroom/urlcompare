@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkUrlStatus } from '@/lib/urlChecker'
+import { safeParseJson, toJsonString } from '@/lib/json'
 
 interface VerifyRequest {
     resultId: string
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
             data: {
                 newUrl: updatedResult.newUrl,
                 statusCode: updatedResult.statusCode,
-                redirectChain: JSON.stringify(updatedResult.redirectChain),
+                redirectChain: toJsonString(updatedResult.redirectChain),
                 finalUrl: updatedResult.finalUrl,
                 result: updatedResult.result,
                 error: updatedResult.error,
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
             statusCode: savedResult.statusCode,
             result: savedResult.result,
             finalUrl: savedResult.finalUrl,
-            redirectChain: JSON.parse(savedResult.redirectChain as string || '[]'),
+            redirectChain: safeParseJson<string[]>(savedResult.redirectChain as string, []),
             error: savedResult.error,
             checkedAt: savedResult.checkedAt.toISOString()
         })
