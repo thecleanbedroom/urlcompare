@@ -20,6 +20,7 @@ export interface CheckUrlConfig {
     retryAttempts?: number
     timeoutSeconds?: number
     useOverrideToken?: boolean
+    edgeOverrideToken?: string
     signal?: AbortSignal
 }
 
@@ -118,11 +119,12 @@ export async function checkUrlStatus(
         retryAttempts = 3,
         timeoutSeconds = 10,
         useOverrideToken = false,
+        edgeOverrideToken = '',
         signal: externalSignal
     } = config
 
     // Resolve override token from environment if enabled
-    const overrideToken = useOverrideToken ? (process.env.EDGE_OVERRIDE_TOKEN || '') : ''
+    const overrideToken = useOverrideToken ? edgeOverrideToken : ''
 
     let retryCount = 0
     let lastError: string | undefined

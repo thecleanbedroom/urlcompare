@@ -9,6 +9,7 @@ export const ComparisonConfigSchema = z.object({
   retryAttempts: z.number().int().min(0).max(10).optional(),
   timeoutSeconds: z.number().int().min(1).max(60).optional(),
   useOverrideToken: z.boolean().optional(),
+  edgeOverrideToken: z.string().optional(),
 }).optional()
 
 export const ComparisonRequestSchema = z.object({
@@ -27,4 +28,5 @@ export const CrawlRequestSchema = z.object({
   excludePatterns: z.array(z.string()).optional(),
   includePatterns: z.array(z.string()).optional(),
   useOverrideToken: z.boolean().optional(),
+  edgeOverrideToken: z.string().optional(),
 })

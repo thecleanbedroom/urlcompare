@@ -7,13 +7,11 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 function getDatabaseConfig(): { url: string } {
-  // DATABASE_URL format: "file:./db/custom.db" (relative to prisma directory)
   const url = process.env.DATABASE_URL ?? 'file:./db/database.sqlite'
   const match = url.match(/^file:(.+)$/)
   if (match) {
     const relativePath = match[1]
-    // Resolve relative to the prisma directory
-    return { url: join(process.cwd(), 'prisma', relativePath) }
+    return { url: join(process.cwd(), relativePath) }
   }
   return { url }
 }

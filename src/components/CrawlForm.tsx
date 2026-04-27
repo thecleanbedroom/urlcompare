@@ -28,6 +28,7 @@ import { getBackoffDelay } from '@/lib/polling';
 interface CrawlFormProps {
     onComplete?: (urls: string[]) => void;
     useOverrideToken?: boolean;
+    edgeOverrideToken?: string;
 }
 
 interface CrawlJob {
@@ -39,7 +40,7 @@ interface CrawlJob {
     lastError?: string;
 }
 
-export function CrawlForm({ onComplete, useOverrideToken }: CrawlFormProps) {
+export function CrawlForm({ onComplete, useOverrideToken, edgeOverrideToken }: CrawlFormProps) {
     const [sourceDomain, setSourceDomain] = useState('');
     const [jobName, setJobName] = useState('');
     const [maxPages, setMaxPages] = useState(100);
@@ -98,6 +99,7 @@ export function CrawlForm({ onComplete, useOverrideToken }: CrawlFormProps) {
                     excludePatterns: excludeArray.length > 0 ? excludeArray : undefined,
                     includePatterns: includeArray.length > 0 ? includeArray : undefined,
                     useOverrideToken: useOverrideToken || undefined,
+                    edgeOverrideToken: (useOverrideToken && edgeOverrideToken) || undefined,
                 }),
             });
 

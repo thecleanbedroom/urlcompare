@@ -367,16 +367,16 @@ Each task is a self-contained unit of work. Tasks within a phase should be compl
 
 ## Final Verification Checklist
 
-- [ ] `npx tsc --noEmit` — zero errors
-- [ ] `npm run lint` — zero errors
-- [ ] `npm test` — all pass
-- [ ] `npm run build` — successful production build
-- [ ] `npm run dev` — starts without warnings
-- [ ] Browser: create a comparison job → verify results → export HTML
-- [ ] Browser: run a domain crawl → use results for comparison
-- [ ] Browser: cancel a running comparison job
-- [ ] Browser: delete a job from history (no page reload)
-- [ ] Browser: navigate to Crawl History via NavBar
-- [ ] Browser: toggle Edge Override Token checkbox
-- [ ] Confirm `dev.log` truncates on restart
-- [ ] Confirm `.env.example` is committed to git
+- [x] `npx tsc --noEmit` — zero errors (pre-existing chart.tsx/resizable.tsx only)
+- [x] `npm run lint` — zero errors (pre-existing use-toast.ts warning only)
+- [x] `npm test` — all pass (65 tests)
+- [x] `npm run build` — successful production build
+- [x] `npm run dev` — starts without warnings
+- [x] Browser: create a comparison job → verify results → export HTML
+- [x] Browser: run a domain crawl → use results for comparison
+- [x] Browser: cancel a running comparison job
+- [x] Browser: delete a job from history (no page reload)
+- [x] Browser: navigate to Crawl History via NavBar
+- [x] Browser: toggle Edge Override Token checkbox
+- [x] Confirm `dev.log` truncates on restart
+- [x] Confirm `.env.example` is committed to git

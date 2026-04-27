@@ -21,6 +21,8 @@ interface UseComparisonReturn {
   setTimeoutSeconds: (v: number) => void
   useOverrideToken: boolean
   setUseOverrideToken: (v: boolean) => void
+  edgeOverrideToken: string
+  setEdgeOverrideToken: (v: string) => void
   results: UrlResult[]
   summary: JobSummary | null
   isRunning: boolean
@@ -46,6 +48,7 @@ export function useComparison(jobIdParam: string | null): UseComparisonReturn {
   const [retryAttempts, setRetryAttempts] = useState(3)
   const [timeoutSeconds, setTimeoutSeconds] = useState(10)
   const [useOverrideToken, setUseOverrideToken] = useState(false)
+  const [edgeOverrideToken, setEdgeOverrideToken] = useState('')
   const [results, setResults] = useState<UrlResult[]>([])
   const [summary, setSummary] = useState<JobSummary | null>(null)
   const [isRunning, setIsRunning] = useState(false)
@@ -235,7 +238,7 @@ export function useComparison(jobIdParam: string | null): UseComparisonReturn {
           sourceUrls: urls,
           newDomain,
           name: jobName || undefined,
-          config: { followRedirects, maxConcurrency, retryAttempts, timeoutSeconds, useOverrideToken: useOverrideToken || undefined },
+          config: { followRedirects, maxConcurrency, retryAttempts, timeoutSeconds, useOverrideToken: useOverrideToken || undefined, edgeOverrideToken: (useOverrideToken && edgeOverrideToken) || undefined },
         }),
       })
 
@@ -282,7 +285,8 @@ export function useComparison(jobIdParam: string | null): UseComparisonReturn {
           resultId: resultId,
           sourceUrl: result.sourceUrl,
           newDomain: newDomain,
-          useOverrideToken: useOverrideToken || undefined
+          useOverrideToken: useOverrideToken || undefined,
+          edgeOverrideToken: (useOverrideToken && edgeOverrideToken) || undefined
         })
       })
 
@@ -335,6 +339,7 @@ export function useComparison(jobIdParam: string | null): UseComparisonReturn {
     retryAttempts, setRetryAttempts,
     timeoutSeconds, setTimeoutSeconds,
     useOverrideToken, setUseOverrideToken,
+    edgeOverrideToken, setEdgeOverrideToken,
     results, summary, isRunning, error, progress,
     jobId, isLoadingJob,
     activeTab, setActiveTab,

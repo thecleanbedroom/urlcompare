@@ -23,6 +23,7 @@ interface ComparisonConfig {
   retryAttempts?: number
   timeoutSeconds?: number
   useOverrideToken?: boolean
+  edgeOverrideToken?: string
 }
 
 // Store active comparison abort controllers for cancellation
@@ -204,7 +205,8 @@ async function processComparisonJob(
     maxConcurrency = 10,
     retryAttempts = 3,
     timeoutSeconds = 10,
-    useOverrideToken = false
+    useOverrideToken = false,
+    edgeOverrideToken = ''
   } = config
 
   const controller = new AbortController()
@@ -234,7 +236,7 @@ async function processComparisonJob(
           const result = await checkUrlStatus(
             sourceUrl,
             newDomain,
-            { followRedirects, retryAttempts, timeoutSeconds, useOverrideToken, signal: controller.signal }
+            { followRedirects, retryAttempts, timeoutSeconds, useOverrideToken, edgeOverrideToken, signal: controller.signal }
           )
           return result
         } catch (err) {

@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
             includePatterns: parsed.data.includePatterns,
             excludePatterns: parsed.data.excludePatterns,
             useOverrideToken: parsed.data.useOverrideToken,
+            edgeOverrideToken: parsed.data.edgeOverrideToken,
         });
 
         return NextResponse.json({
@@ -199,6 +200,7 @@ async function startCrawlInBackground(
         includePatterns?: string[];
         excludePatterns?: string[];
         useOverrideToken?: boolean;
+        edgeOverrideToken?: string;
     }
 ) {
     const controller = new AbortController();

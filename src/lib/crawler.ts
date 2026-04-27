@@ -12,6 +12,7 @@ export interface CrawlerOptions {
     includePatterns?: string[];
     excludePatterns?: string[];
     useOverrideToken?: boolean;
+    edgeOverrideToken?: string;
     onProgress?: (visited: number, discovered: number, currentUrl: string) => void;
     onError?: (url: string, error: Error) => void;
     signal?: AbortSignal;
@@ -135,8 +136,8 @@ export class DomainCrawler {
                 'User-Agent': 'URLCompare Domain Scanner/1.0',
                 'Accept': 'text/html,application/xhtml+xml',
             };
-            if (this.options.useOverrideToken && process.env.EDGE_OVERRIDE_TOKEN) {
-                fetchHeaders['X-EdgeRedirect-Override'] = process.env.EDGE_OVERRIDE_TOKEN;
+            if (this.options.useOverrideToken && this.options.edgeOverrideToken) {
+                fetchHeaders['X-EdgeRedirect-Override'] = this.options.edgeOverrideToken;
             }
 
             const response = await fetch(url, {
@@ -288,7 +289,8 @@ export async function processCrawlJob(
         delayMs: number;
         includePatterns?: string[];
         excludePatterns?: string[];
-        useOverrideToken?: boolean;
+    useOverrideToken?: boolean;
+    edgeOverrideToken?: string;
     },
     updateProgress: (data: {
         pagesVisited?: number;

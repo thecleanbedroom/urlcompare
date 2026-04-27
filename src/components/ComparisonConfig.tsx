@@ -27,6 +27,8 @@ interface ComparisonConfigProps {
   setTimeoutSeconds: (v: number) => void
   useOverrideToken: boolean
   setUseOverrideToken: (v: boolean) => void
+  edgeOverrideToken: string
+  setEdgeOverrideToken: (v: string) => void
   activeTab: string
   setActiveTab: (v: string) => void
   isRunning: boolean
@@ -44,6 +46,7 @@ export function ComparisonConfig({
   retryAttempts, setRetryAttempts,
   timeoutSeconds, setTimeoutSeconds,
   useOverrideToken, setUseOverrideToken,
+  edgeOverrideToken, setEdgeOverrideToken,
   activeTab, setActiveTab,
   isRunning, error,
   onRun, onCrawlComplete,
@@ -78,7 +81,7 @@ export function ComparisonConfig({
             </TabsList>
 
             <TabsContent value="scan" className="pt-4">
-              <CrawlForm onComplete={onCrawlComplete} useOverrideToken={useOverrideToken} />
+              <CrawlForm onComplete={onCrawlComplete} useOverrideToken={useOverrideToken} edgeOverrideToken={edgeOverrideToken} />
             </TabsContent>
 
             <TabsContent value="manual" className="pt-4 space-y-4">
@@ -188,8 +191,8 @@ export function ComparisonConfig({
             </TabsContent>
           </Tabs>
 
-          <div className="space-y-2">
-            <Label htmlFor="useOverrideToken" className="text-sm flex items-center gap-1">
+          <div className="border-t pt-4 mt-4 space-y-3">
+            <Label className="text-sm flex items-center gap-1 font-medium">
               <Shield className="h-3.5 w-3.5" />
               Edge Override Token
             </Label>
@@ -201,10 +204,25 @@ export function ComparisonConfig({
                 onChange={(e) => setUseOverrideToken(e.target.checked)}
                 className="rounded"
               />
-              <span className="text-sm">{useOverrideToken ? 'Enabled' : 'Disabled'}</span>
+              <Label htmlFor="useOverrideToken" className="text-sm cursor-pointer">
+                {useOverrideToken ? 'Enabled' : 'Disabled'}
+              </Label>
             </div>
+            {useOverrideToken && (
+              <div className="space-y-2">
+                <Label htmlFor="edgeOverrideToken" className="text-sm">Token Value</Label>
+                <Input
+                  id="edgeOverrideToken"
+                  type="password"
+                  value={edgeOverrideToken}
+                  onChange={(e) => setEdgeOverrideToken(e.target.value)}
+                  placeholder="Enter your edge override token"
+                  autoComplete="off"
+                />
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">
-              Sends <code className="text-xs">X-EdgeRedirect-Override</code> header (token from <code>.env</code>) to force redirect processing at the origin
+              Sends <code className="text-xs">X-EdgeRedirect-Override</code> header with the token above to force redirect processing at the origin
             </p>
           </div>
         </CardContent>

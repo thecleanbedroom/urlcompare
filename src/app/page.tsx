@@ -57,6 +57,7 @@ function HomeContent() {
           retryAttempts={comp.retryAttempts} setRetryAttempts={comp.setRetryAttempts}
           timeoutSeconds={comp.timeoutSeconds} setTimeoutSeconds={comp.setTimeoutSeconds}
           useOverrideToken={comp.useOverrideToken} setUseOverrideToken={comp.setUseOverrideToken}
+          edgeOverrideToken={comp.edgeOverrideToken} setEdgeOverrideToken={comp.setEdgeOverrideToken}
           activeTab={comp.activeTab} setActiveTab={comp.setActiveTab}
           isRunning={comp.isRunning} error={comp.error}
           onRun={comp.runComparison} onCrawlComplete={comp.handleCrawlComplete}
