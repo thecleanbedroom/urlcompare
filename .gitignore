@@ -65,3 +65,7 @@ prompt__pycache__/
 # deployment artifacts
 *.zip
 *.tar.gz
+
+# python bytecode (mcp toolkit spec runs)
+__pycache__/
+*.pyc
