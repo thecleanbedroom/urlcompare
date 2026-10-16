@@ -54,4 +54,4 @@ local-*
 **/prisma/db/*.db-journal
 
 test
-prompt
+prompt__pycache__/
