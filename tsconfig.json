@@ -10,6 +10,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "types": ["node"],
     "paths": {
       "shared-types": ["./packages/shared-types/src"],
       "shared-logic": ["./packages/shared-logic/src"],

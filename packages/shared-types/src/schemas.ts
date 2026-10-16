@@ -30,3 +30,7 @@ export const CrawlRequestSchema = z.object({
   useOverrideToken: z.boolean().optional(),
   edgeOverrideToken: z.string().optional(),
 })
+
+export type ComparisonConfigInput = z.infer<typeof ComparisonConfigSchema>
+export type ComparisonRequestInput = z.infer<typeof ComparisonRequestSchema>
+export type CrawlRequestInput = z.infer<typeof CrawlRequestSchema>

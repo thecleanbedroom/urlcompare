@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  transpilePackages: ['shared-types', 'shared-logic'],
   typescript: {
     ignoreBuildErrors: true,
   },

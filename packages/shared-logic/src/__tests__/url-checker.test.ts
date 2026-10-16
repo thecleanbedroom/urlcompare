@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { extractPath, constructNewUrl, isUrlSafe, isPrivateIPv4 } from '../urlChecker'
+import { extractPath, constructNewUrl, isUrlSafe, isPrivateIPv4 } from '../url-checker'
 
 describe('extractPath', () => {
   it('extracts pathname from a URL', () => {

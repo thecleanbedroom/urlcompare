@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { processCrawlJob, type CrawlerOptions } from '@/lib/crawler';
-import { safeParseJson, toJsonString } from '@/lib/json';
-import { CrawlRequestSchema } from '@/lib/schemas';
+import { processCrawlJob, type CrawlerOptions } from 'shared-logic';
+import { safeParseJson, toJsonString } from 'shared-logic';
+import { CrawlRequestSchema } from 'shared-types';
 
 // Store active crawl abort controllers
 const activeCrawls = new Map<string, AbortController>();

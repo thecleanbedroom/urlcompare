@@ -3,27 +3,10 @@
  * Uses BFS (breadth-first search) to traverse links
  */
 
-import { isUrlSafe } from './urlChecker'
+import { isUrlSafe } from './url-checker'
+import type { CrawlerOptions, CrawlResult } from 'shared-types'
 
-export interface CrawlerOptions {
-    maxPages: number;
-    maxDepth: number;
-    delayMs: number;
-    includePatterns?: string[];
-    excludePatterns?: string[];
-    useOverrideToken?: boolean;
-    edgeOverrideToken?: string;
-    onProgress?: (visited: number, discovered: number, currentUrl: string) => void;
-    onError?: (url: string, error: Error) => void;
-    signal?: AbortSignal;
-}
-
-export interface CrawlResult {
-    discoveredUrls: string[];
-    visitedCount: number;
-    errorCount: number;
-    errors: Array<{ url: string; error: string }>;
-}
+export type { CrawlerOptions, CrawlResult }
 
 interface QueueItem {
     url: string;

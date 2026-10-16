@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { toJsonString } from '@/lib/json'
+import { toJsonString } from 'shared-logic'
 import {
   checkUrlStatus,
   extractPath,
   constructNewUrl,
   isUrlSafe,
+  generateSummary,
   type ComparisonResult
-} from '@/lib/urlChecker'
-import { ComparisonRequestSchema } from '@/lib/schemas'
+} from 'shared-logic'
+import { ComparisonRequestSchema } from 'shared-types'
 
 interface ComparisonRequest {
   sourceUrls: string[]
@@ -308,21 +309,5 @@ async function processComparisonJob(
     }
   } finally {
     activeComparisons.delete(jobId)
-  }
-}
-
-
-
-interface SummaryInput {
-  result: string
-}
-
-function generateSummary(results: SummaryInput[]) {
-  return {
-    totalUrls: results.length,
-    ok: results.filter(r => r.result === 'OK').length,
-    redirected: results.filter(r => r.result === 'Redirected').length,
-    missing: results.filter(r => r.result === 'Missing').length,
-    error: results.filter(r => r.result === 'Error').length
   }
 }

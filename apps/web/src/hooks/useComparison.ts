@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { UrlResult, JobSummary } from '@/types'
+import type { UrlResult, JobSummary } from 'shared-types'
 import { getBackoffDelay } from '@/lib/polling'
 
 interface UseComparisonReturn {

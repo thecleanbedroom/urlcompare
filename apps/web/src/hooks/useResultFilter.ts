@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { UrlResult, StatusFilter } from '@/types'
+import type { UrlResult, StatusFilter } from 'shared-types'
 
 interface UseResultFilterReturn {
   statusFilter: StatusFilter

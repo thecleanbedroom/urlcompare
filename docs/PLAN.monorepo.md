@@ -92,7 +92,9 @@ Shared contract: domain types **plus runtime zod schemas** consumed by web, api-
   "import": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
   "default": "./src/index.ts" } }
 ```
-Built `dist/` for real ESM imports; raw `src/*.ts` fallback so Vite/vitest/esbuild consume TS source with no build step in dev. Add subpath exports (`"./schemas"`) only if a consumer actually needs them. **Verify which condition Next.js/Turbopack resolves** — it may need `transpilePackages` or a different condition order.
+Built `dist/` for real ESM imports; raw `src/*.ts` fallback so Vite/vitest/esbuild consume TS source with no build step in dev. Add subpath exports (`"./schemas"`) only if a consumer actually needs them.
+
+> **Implemented differently (stage 2):** every consumer in this monorepo is a bundler (Next/Turbopack, esbuild, vitest) — none does real Node ESM resolution. So `exports` points straight at `src/*.ts` (`types` + `default`), no `dist` at all, and web uses `transpilePackages`. This removes the resolution risk entirely; tsconfigs are typecheck-only (`noEmit`).
 
 ### `packages/shared-logic`
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { JobSummary } from '@/types'
+import type { JobSummary } from 'shared-types'
 
 interface SummaryCardProps {
   summary: JobSummary

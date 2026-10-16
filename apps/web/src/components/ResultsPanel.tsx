@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Download, Maximize2 } from 'lucide-react'
 import { ResultCard } from '@/components/ResultCard'
 import { SummaryCard } from '@/components/SummaryCard'
-import type { UrlResult, JobSummary, StatusFilter } from '@/types'
+import type { UrlResult, JobSummary, StatusFilter } from 'shared-types'
 
 interface ResultsPanelProps {
   summary: JobSummary | null

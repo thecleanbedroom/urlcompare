@@ -3,9 +3,9 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RefreshCw, ExternalLink } from 'lucide-react'
-import { safeParseJson } from '@/lib/json'
+import { safeParseJson } from 'shared-logic'
 import { getStatusBadge } from '@/lib/status'
-import type { UrlResult } from '@/types'
+import type { UrlResult } from 'shared-types'
 
 interface ResultCardProps {
     result: UrlResult

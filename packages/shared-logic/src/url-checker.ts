@@ -3,26 +3,9 @@
  * Used by both comparison and verify API routes
  */
 
-export interface ComparisonResult {
-    sourceUrl: string
-    newUrl: string
-    statusCode: number | null
-    redirectChain: string[]
-    finalUrl: string | null
-    result: 'OK' | 'Missing' | 'Error' | 'Redirected'
-    error?: string
-    retryCount: number
-    checkedAt: string
-}
+import type { CheckUrlConfig, ComparisonResult } from 'shared-types'
 
-export interface CheckUrlConfig {
-    followRedirects?: boolean
-    retryAttempts?: number
-    timeoutSeconds?: number
-    useOverrideToken?: boolean
-    edgeOverrideToken?: string
-    signal?: AbortSignal
-}
+export type { CheckUrlConfig, ComparisonResult }
 
 /**
  * Check if a hostname resolves to a private/reserved IP address.

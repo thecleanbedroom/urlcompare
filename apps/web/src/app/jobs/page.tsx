@@ -5,7 +5,7 @@ import { JobCard } from '@/components/JobCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import type { JobStatus } from '@/types';
+import type { JobStatus } from 'shared-types';
 
 type Job = {
   id: string;

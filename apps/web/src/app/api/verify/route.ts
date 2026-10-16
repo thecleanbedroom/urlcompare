@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { checkUrlStatus } from '@/lib/urlChecker'
-import { safeParseJson, toJsonString } from '@/lib/json'
+import { checkUrlStatus } from 'shared-logic'
+import { safeParseJson, toJsonString } from 'shared-logic'
 
 interface VerifyRequest {
     resultId: string

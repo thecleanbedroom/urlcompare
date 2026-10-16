@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog";
-import type { JobStatus } from '@/types'
+import type { JobStatus } from 'shared-types'
 
 interface JobCardProps {
   id: string;

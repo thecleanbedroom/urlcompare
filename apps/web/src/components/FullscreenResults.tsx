@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Download, Minimize2 } from 'lucide-react'
 import { ResultCard } from '@/components/ResultCard'
-import type { UrlResult, StatusFilter } from '@/types'
+import type { UrlResult, StatusFilter } from 'shared-types'
 
 interface FullscreenResultsProps {
   results: UrlResult[]
