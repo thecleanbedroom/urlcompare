@@ -4,16 +4,17 @@ services:
       context: .
       dockerfile: packages/api-server/Dockerfile
     ports:
-      - "3001:3001"
+      - "${API_PORT:-3001}:3001"
     environment:
-      - DATABASE_URL=file:/app/db/custom.db
+      - DATABASE_URL=${DATABASE_URL:-file:/app/db/custom.db}
       - PORT=3001
       - HOST=0.0.0.0
-      - WEB_URL=http://127.0.0.1:3000
-      # - API_KEY=change-me                       # required if the API port is exposed beyond the web proxy
-      # - GOOGLE_CLIENT_ID=
-      # - GOOGLE_CLIENT_SECRET=
-      # - GOOGLE_REDIRECT_URI=http://127.0.0.1:3001/api/auth/google/callback
+      - WEB_URL=${WEB_URL:-http://localhost:3000}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
+      - API_KEY=${API_KEY:-}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:3001/api/auth/google/callback}
     volumes:
       - db-data:/app/db
     healthcheck:
@@ -30,9 +31,9 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         # Baked into the build — must resolve inside the compose network.
-        - API_URL=http://api:3001
+        - API_URL=${API_URL:-http://api:3001}
     ports:
-      - "3000:3000"
+      - "${WEB_PORT:-3000}:3000"
     environment:
       - PORT=3000
       - HOSTNAME=0.0.0.0
