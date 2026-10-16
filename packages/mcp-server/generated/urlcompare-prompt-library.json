@@ -1,0 +1,199 @@
+{
+  "server": "urlcompare",
+  "version": "1.0.0",
+  "total_phrasings": 48,
+  "phrasings": [
+    {
+      "tool": "discover_urls",
+      "phrasing": "Crawl https://old-site.com and list its pages"
+    },
+    {
+      "tool": "discover_urls",
+      "phrasing": "What URLs does my blog have? Use the sitemap"
+    },
+    {
+      "tool": "discover_urls",
+      "phrasing": "Discover all pages on https://example.org via sitemap and crawl"
+    },
+    {
+      "tool": "discover_urls",
+      "phrasing": "Find the URLs on my site using Search Console"
+    },
+    {
+      "tool": "discover_urls",
+      "phrasing": "Scan old-site.com but skip the /wp-admin/ paths"
+    },
+    {
+      "tool": "discover_urls",
+      "phrasing": "Enumerate pages under https://docs.example.com, max depth 5"
+    },
+    {
+      "tool": "discover_urls",
+      "phrasing": "Discover this site, strip query strings, ignore fragments"
+    },
+    {
+      "tool": "discover_urls",
+      "phrasing": "Build me a URL list for example.com before the migration"
+    },
+    {
+      "tool": "list_discovered_urls",
+      "phrasing": "Show me the URLs the discovery job found"
+    },
+    {
+      "tool": "list_discovered_urls",
+      "phrasing": "What pages are in URL set cm0abc123?"
+    },
+    {
+      "tool": "list_discovered_urls",
+      "phrasing": "List the discovered urls for that set"
+    },
+    {
+      "tool": "list_discovered_urls",
+      "phrasing": "Which URLs will be included in the comparison?"
+    },
+    {
+      "tool": "list_discovered_urls",
+      "phrasing": "Give me the first 100 urls in the set"
+    },
+    {
+      "tool": "update_url_set",
+      "phrasing": "Exclude the /feed/* urls from that set"
+    },
+    {
+      "tool": "update_url_set",
+      "phrasing": "Add https://old-site.com/hidden-page to the URL set"
+    },
+    {
+      "tool": "update_url_set",
+      "phrasing": "Don't include the admin pages in the comparison"
+    },
+    {
+      "tool": "update_url_set",
+      "phrasing": "Mark that URL as excluded"
+    },
+    {
+      "tool": "update_url_set",
+      "phrasing": "Add these two pages to the discovered set manually"
+    },
+    {
+      "tool": "start_comparison",
+      "phrasing": "Check if all the discovered URLs work on https://new-site.com"
+    },
+    {
+      "tool": "start_comparison",
+      "phrasing": "Start a comparison of that URL set against staging.example.com"
+    },
+    {
+      "tool": "start_comparison",
+      "phrasing": "Do these old URLs resolve on the new domain?"
+    },
+    {
+      "tool": "start_comparison",
+      "phrasing": "Run the migration check against https://new-site.com"
+    },
+    {
+      "tool": "start_comparison",
+      "phrasing": "Compare these 5 URLs to the new site: ..."
+    },
+    {
+      "tool": "start_comparison",
+      "phrasing": "Verify the migration — test the whole set on the new domain"
+    },
+    {
+      "tool": "get_job_status",
+      "phrasing": "Is the crawl finished yet?"
+    },
+    {
+      "tool": "get_job_status",
+      "phrasing": "What's the status of job cm0abc123?"
+    },
+    {
+      "tool": "get_job_status",
+      "phrasing": "How far along is the comparison?"
+    },
+    {
+      "tool": "get_job_status",
+      "phrasing": "Check if my discovery job is done"
+    },
+    {
+      "tool": "get_job_status",
+      "phrasing": "Did the migration check complete?"
+    },
+    {
+      "tool": "get_comparison_report",
+      "phrasing": "Show me the comparison results"
+    },
+    {
+      "tool": "get_comparison_report",
+      "phrasing": "Which URLs are missing on the new domain?"
+    },
+    {
+      "tool": "get_comparison_report",
+      "phrasing": "Give me the migration report for job cm0abc123"
+    },
+    {
+      "tool": "get_comparison_report",
+      "phrasing": "How many pages returned 404 on the new site?"
+    },
+    {
+      "tool": "get_comparison_report",
+      "phrasing": "List all the redirected URLs from that comparison"
+    },
+    {
+      "tool": "get_comparison_report",
+      "phrasing": "Summarize the results — what failed?"
+    },
+    {
+      "tool": "check_url",
+      "phrasing": "Does https://old.com/pricing exist on the new site?"
+    },
+    {
+      "tool": "check_url",
+      "phrasing": "Check this one URL against https://new-site.com"
+    },
+    {
+      "tool": "check_url",
+      "phrasing": "Quick spot-check: does /about/team work on the new domain?"
+    },
+    {
+      "tool": "check_url",
+      "phrasing": "Verify old-site.com/contact resolves on staging"
+    },
+    {
+      "tool": "cancel_job",
+      "phrasing": "Cancel the running crawl"
+    },
+    {
+      "tool": "cancel_job",
+      "phrasing": "Stop that comparison job"
+    },
+    {
+      "tool": "cancel_job",
+      "phrasing": "Kill job cm0abc123, it's taking too long"
+    },
+    {
+      "tool": "cancel_job",
+      "phrasing": "Abort the discovery"
+    },
+    {
+      "tool": "list_jobs",
+      "phrasing": "What jobs have I run?"
+    },
+    {
+      "tool": "list_jobs",
+      "phrasing": "List all comparisons"
+    },
+    {
+      "tool": "list_jobs",
+      "phrasing": "Show recent discovery jobs"
+    },
+    {
+      "tool": "list_jobs",
+      "phrasing": "Any jobs still running?"
+    },
+    {
+      "tool": "list_jobs",
+      "phrasing": "Find the job id for my last crawl"
+    }
+  ]
+}

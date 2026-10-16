@@ -1,0 +1,375 @@
+{
+  "serverInfo": {
+    "name": "urlcompare",
+    "version": "1.0.0"
+  },
+  "instructions": "Workflow: discover_urls → get_job_status (until completed → url_set_id) → optional list_discovered_urls / update_url_set → start_comparison(url_set_id or source_urls, new_domain) → get_job_status → get_comparison_report. check_url = single synchronous spot-check. Jobs are async — poll; never assume instant results. GSC needs a connected account (gsc_not_connected → web UI).",
+  "tools": [
+    {
+      "name": "discover_urls",
+      "description": "Start a discovery job that finds a site's URLs from one or more sources (link crawl, sitemap.xml, Google Search Console) and stores the merged, deduplicated, canonicalized result as a reviewable URL set.\n\nWhen to use: When the user wants to enumerate a website's pages before a migration comparison — 'crawl this site', 'what URLs does example.com have', 'find all pages under the old domain'. The job is asynchronous: it returns a job_id immediately; poll get_job_status, then read the produced URL set.\n\nWhen NOT to use: Do not use to check whether URLs work on the NEW domain — that is start_comparison. Do not use when the user already has an explicit URL list — pass source_urls to start_comparison directly.\n\nEdge cases:\n- sources accepts any non-empty subset of ['crawl','sitemap','gsc']; results merge across sources with per-URL source attribution.\n- GSC only returns pages that received impressions — it is not exhaustive and needs a connected Google account (see gsc_not_connected).\n- query_policy defaults to 'ignore' (strip query strings). 'allow' keeps only query_allow_keys; 'deny' drops query_deny_keys — pass the key list in the matching field.\n- max_depth defaults to 20; values above ~100 can run for a very long time on large sites.\n- Completed jobs produce a url_set_id (visible via get_job_status); read URLs via list_discovered_urls or the urlcompare://urlsets/{id} resource.\n\nError behavior: 400-style structured errors: invalid_input for malformed domains or empty sources, url_blocked for private/non-http domains, gsc_not_connected or gsc_no_property when the GSC source is requested without a working connection.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sourceDomain": {
+            "type": "string",
+            "description": "Absolute http(s) URL of the site to discover URLs on, e.g. 'https://old-site.com'."
+          },
+          "sources": {
+            "type": "array",
+            "description": "Discovery sources to run: 'crawl' (link-following BFS), 'sitemap' (sitemap.xml incl. robots.txt discovery), 'gsc' (Search Console impressions). Default ['crawl','sitemap'].",
+            "default": [
+              "crawl",
+              "sitemap"
+            ],
+            "items": {}
+          },
+          "name": {
+            "type": "string",
+            "description": "Optional human-readable label for the job/URL set."
+          },
+          "maxPages": {
+            "type": "integer",
+            "description": "Max pages the crawler visits (1-50000). Default 10000.",
+            "default": 10000
+          },
+          "maxDepth": {
+            "type": "integer",
+            "description": "Max link depth for the crawl source (1-1000). Default 20.",
+            "default": 20
+          },
+          "includePatterns": {
+            "type": "array",
+            "description": "Optional glob patterns — only matching URLs are kept (e.g. ['*/docs/*']). Evaluated after excludes.",
+            "items": {}
+          },
+          "excludePatterns": {
+            "type": "array",
+            "description": "Optional glob patterns — matching URLs are dropped first (e.g. ['*/wp-admin/*', '*.pdf']).",
+            "items": {}
+          },
+          "queryPolicy": {
+            "type": "string",
+            "description": "How to treat query strings when canonicalizing: 'ignore' strips them (default), 'allow' keeps only query_allow_keys, 'deny' drops query_deny_keys.",
+            "enum": [
+              "ignore",
+              "allow",
+              "deny"
+            ],
+            "default": "ignore"
+          },
+          "queryAllowKeys": {
+            "type": "array",
+            "description": "Query keys to keep when query_policy='allow' (e.g. ['page','lang']).",
+            "items": {}
+          },
+          "queryDenyKeys": {
+            "type": "array",
+            "description": "Query keys to drop when query_policy='deny' (e.g. ['utm_source','fbclid']).",
+            "items": {}
+          },
+          "ignoreAnchors": {
+            "type": "boolean",
+            "description": "Strip #fragments when canonicalizing URLs. Default true.",
+            "default": true
+          }
+        },
+        "required": [
+          "sourceDomain"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "list_discovered_urls",
+      "description": "Read the canonicalized URLs in a URL set — the merged output of a discovery job — with per-URL source attribution and included flags.\n\nWhen to use: When the user wants to inspect what a discovery job found, review which URLs would feed a comparison, or enumerate the members of a URL set. Provide the url_set_id (from get_job_status on a completed discovery job, or the urlcompare://urlsets resource).\n\nWhen NOT to use: Do not use to list the SETS themselves — read the urlcompare://urlsets resource or list_jobs. Do not use for comparison RESULTS — use get_comparison_report.\n\nEdge cases:\n- Returns up to `limit` urls (default 500, max 2000) plus a `total` count — page with offset for large sets.\n- Each url carries `sources` (which of crawl/sitemap/gsc/manual contributed it) and `included` (whether it feeds comparisons).\n- Urls are canonicalized — query policy and fragment stripping were already applied at discovery time.\n\nError behavior: not_found when the url_set_id does not exist.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "urlSetId": {
+            "type": "string",
+            "description": "The URL set id (from a completed discovery job or the urlcompare://urlsets resource)."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Max URLs to return (1-2000). Default 500.",
+            "default": 500
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Skip this many URLs for pagination. Default 0.",
+            "default": 0
+          }
+        },
+        "required": [
+          "urlSetId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "update_url_set",
+      "description": "Toggle whether individual URLs in a set are included in future comparisons, and/or add manual URLs to the set.\n\nWhen to use: When the user wants to exclude specific URLs from a comparison ('drop the /feed/* urls', 'don't include the admin pages') or add URLs the discovery missed. Toggles take effect on the NEXT comparison — running jobs already snapshotted their URL list.\n\nWhen NOT to use: Do not use to create a new URL set — that only happens via discover_urls. Do not use to change an in-flight comparison's URL list — that's fixed at start_comparison time.\n\nEdge cases:\n- included takes [{urlId, included}] pairs — get urlIds from list_discovered_urls.\n- add_manual_urls are canonicalized with the set's original query policy and merge into existing rows (adding 'manual' to sources) on collision.\n- Excluding URLs does not delete them — they stay in the set with included=false.\n\nError behavior: not_found when the url_set_id does not exist; invalid_input for malformed manual URLs.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "urlSetId": {
+            "type": "string",
+            "description": "The URL set to modify."
+          },
+          "included": {
+            "type": "array",
+            "description": "Inclusion toggles: [{urlId: string, included: boolean}].",
+            "items": {}
+          },
+          "addManualUrls": {
+            "type": "array",
+            "description": "Absolute URLs to add to the set with source 'manual' (canonicalized first).",
+            "items": {}
+          }
+        },
+        "required": [
+          "urlSetId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "start_comparison",
+      "description": "Start a comparison job that checks every source URL's path on the new domain — recording status codes, redirect chains, and a final verdict (OK / Redirected / Missing / Error) per URL.\n\nWhen to use: When the user wants to verify a domain migration — 'do all these old URLs exist on the new site', 'check the migration', 'compare the discovered set against staging'. Either url_set_id (a discovered set — its included URLs are snapshotted) or source_urls (ad-hoc list) is required, plus new_domain.\n\nWhen NOT to use: Do not use to check a single URL — use check_url. Do not use to find a site's URLs — use discover_urls first.\n\nEdge cases:\n- Exactly one of url_set_id or source_urls must be given (conflicting_params otherwise).\n- The job is asynchronous — returns job_id + total_urls immediately; poll get_job_status, then get_comparison_report.\n- url_set_id mode snapshots the set's currently-included URLs — later toggles do not affect this job.\n- Comparison checks the PATH of each source URL on the new domain (e.g. old.com/about → new.com/about).\n\nError behavior: conflicting_params for both/neither URL inputs, url_blocked for private addresses, no_included_urls for an empty set, not_found for an unknown url_set_id.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "newDomain": {
+            "type": "string",
+            "description": "Absolute http(s) URL of the new domain to check paths against, e.g. 'https://new-site.com'."
+          },
+          "urlSetId": {
+            "type": "string",
+            "description": "URL set whose included URLs are compared (mutually exclusive with source_urls)."
+          },
+          "sourceUrls": {
+            "type": "array",
+            "description": "Ad-hoc list of absolute source URLs (mutually exclusive with url_set_id).",
+            "items": {}
+          },
+          "name": {
+            "type": "string",
+            "description": "Optional human-readable label for the job."
+          },
+          "followRedirects": {
+            "type": "boolean",
+            "description": "Follow redirect chains to the final URL. Default true.",
+            "default": true
+          },
+          "maxConcurrency": {
+            "type": "integer",
+            "description": "Parallel checks (1-50). Default 10.",
+            "default": 10
+          },
+          "retryAttempts": {
+            "type": "integer",
+            "description": "Retries per failing URL (0-10). Default 3.",
+            "default": 3
+          },
+          "timeoutSeconds": {
+            "type": "integer",
+            "description": "Per-request timeout (1-60s). Default 10.",
+            "default": 10
+          }
+        },
+        "required": [
+          "newDomain"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "get_job_status",
+      "description": "Poll the progress of a discovery or comparison job — status, completion counts, and (for discoveries) the produced url_set_id.\n\nWhen to use: After discover_urls or start_comparison returns a job_id — poll until status is 'completed', 'failed', or 'cancelled'. For comparisons, progress shows completed/total URLs; for discoveries, pages_visited and the resulting url_set_id.\n\nWhen NOT to use: Do not use for full results — get_comparison_report returns the actual per-URL verdicts. Do not use to list all jobs — use list_jobs.\n\nEdge cases:\n- kind defaults to auto-detect (tries comparison, then discovery) — pass it explicitly to disambiguate.\n- status values: pending, running, completed, failed, cancelled.\n- A completed discovery exposes url_set_id + url_count; a completed comparison exposes a result summary (ok/redirected/missing/error counts).\n\nError behavior: not_found when no job with that id exists (in either kind when auto-detecting).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "description": "The job id returned by discover_urls or start_comparison."
+          },
+          "kind": {
+            "type": "string",
+            "description": "Job kind: 'comparison' or 'discovery'. Default auto-detect.",
+            "enum": [
+              "comparison",
+              "discovery"
+            ]
+          }
+        },
+        "required": [
+          "jobId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_comparison_report",
+      "description": "Return the full results of a comparison job — per-URL verdicts, status codes, redirect chains — plus the ok/redirected/missing/error summary.\n\nWhen to use: When the user wants the outcome of a comparison — 'how did the migration check go', 'which URLs are missing on the new domain', 'show me the results / the failures'. Use after get_job_status shows 'completed' (partial results work for running jobs but are not final).\n\nWhen NOT to use: Do not use for job progress — get_job_status. Do not use to list discovered URLs — list_discovered_urls.\n\nEdge cases:\n- Results are capped (default 500, max 5000) — page with offset; total_results gives the real count.\n- Per-URL result values: 'OK' (2xx on new domain), 'Redirected' (ended elsewhere), 'Missing' (404/410), 'Error' (network/other failure).\n- redirect_chain lists the hops followed; final_url is where the check landed.\n- For a downloadable file (json/csv/html), the web UI's export endpoint is the better fit — this returns structured data.\n\nError behavior: not_found for an unknown job_id; job_not_completed if the job failed or was cancelled.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "description": "The comparison job id."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Max result rows to return (1-5000). Default 500.",
+            "default": 500
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Skip this many rows for pagination. Default 0.",
+            "default": 0
+          }
+        },
+        "required": [
+          "jobId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "check_url",
+      "description": "Synchronously check one source URL's path on a new domain and return the verdict — status code, redirect chain, final URL, and OK/Redirected/Missing/Error result.\n\nWhen to use: For one-off spot checks — 'does old-site.com/pricing exist on the new domain', 'verify this URL before the launch'. Returns immediately with the verdict; no job is created.\n\nWhen NOT to use: Do not use for bulk checks — start_comparison handles lists efficiently with concurrency. Do not use to enumerate site URLs — discover_urls.\n\nEdge cases:\n- The check is on the PATH: sourceUrl 'https://old.com/a/b?x=1' checks 'newDomain + /a/b?x=1'.\n- result 'Redirected' means the new URL answered but redirected elsewhere; the hops are in redirect_chain.\n- follow_redirects=false returns the first response's status code only.\n\nError behavior: url_blocked for private/non-http addresses; invalid_input for malformed URLs.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sourceUrl": {
+            "type": "string",
+            "description": "Absolute http(s) URL whose path is checked on the new domain."
+          },
+          "newDomain": {
+            "type": "string",
+            "description": "Absolute http(s) new domain, e.g. 'https://new-site.com'."
+          },
+          "followRedirects": {
+            "type": "boolean",
+            "description": "Follow redirect chains. Default true.",
+            "default": true
+          }
+        },
+        "required": [
+          "sourceUrl",
+          "newDomain"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "cancel_job",
+      "description": "Cancel a running or pending discovery/comparison job, stopping further work.\n\nWhen to use: When the user wants to stop an in-flight job — 'cancel that crawl', 'stop the comparison'. Only affects pending/running jobs; completed/failed jobs are untouched.\n\nWhen NOT to use: Do not use to delete job records — cancellation stops work but keeps the job's results. Do not use for finished jobs (no-op).\n\nEdge cases:\n- kind defaults to auto-detect; pass it when the job kind is known.\n- Cancellation is asynchronous — the job status flips to 'cancelled' once the runner observes the abort signal.\n\nError behavior: not_found for an unknown job_id.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "description": "The job to cancel."
+          },
+          "kind": {
+            "type": "string",
+            "description": "'comparison' or 'discovery'. Default auto-detect.",
+            "enum": [
+              "comparison",
+              "discovery"
+            ]
+          }
+        },
+        "required": [
+          "jobId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_jobs",
+      "description": "List recent discovery and comparison jobs — ids, names, statuses, and targets — to find jobs to poll, report on, or cancel.\n\nWhen to use: When the user asks 'what jobs have run', needs to find a job_id, or wants an overview of recent activity. Optional kind filter narrows to comparisons or discoveries.\n\nWhen NOT to use: Do not use for a specific job's progress — get_job_status. Do not use for URL set contents — list_discovered_urls or the urlcompare://urlsets resource.\n\nEdge cases:\n- Returns up to 100 most recent jobs, newest first, with kind tags.\n- detail field gives a one-line progress hint (e.g. '12/40 checked', '213 urls found').\n\nError behavior: None beyond internal_error — never fails on valid input.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "Filter by job kind: 'comparison' or 'discovery'. Default: both.",
+            "enum": [
+              "comparison",
+              "discovery"
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "url-sets",
+      "uriTemplate": "urlcompare://urlsets",
+      "description": "All URL sets — discovered via discover_urls or created in the web UI — with url counts and source domains. Read urlcompare://urlsets/{id} for a set's URLs, or pass its id to update_url_set / start_comparison.",
+      "mimeType": "application/json"
+    },
+    {
+      "name": "url-set",
+      "uriTemplate": "urlcompare://urlsets/{url_set_id}",
+      "description": "The URLs in one set — canonicalized, with per-URL sources (crawl/sitemap/gsc/manual) and included flags.",
+      "mimeType": "application/json"
+    },
+    {
+      "name": "jobs",
+      "uriTemplate": "urlcompare://jobs",
+      "description": "Recent discovery and comparison jobs with statuses — a read-only activity feed for finding job ids.",
+      "mimeType": "application/json"
+    }
+  ]
+}

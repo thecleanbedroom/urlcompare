@@ -5,9 +5,10 @@ import { checkUrlStatus, safeParseJson, toJsonString } from 'shared-logic'
 import { z } from 'zod'
 
 const VerifyRequestSchema = z.object({
-    resultId: z.string().min(1),
+    resultId: z.string().min(1).optional(),
     sourceUrl: z.string().url(),
     newDomain: z.string().min(1),
+    followRedirects: z.boolean().optional(),
     useOverrideToken: z.boolean().optional(),
     edgeOverrideToken: z.string().optional(),
 })
@@ -19,10 +20,22 @@ verifyRoute.post('/', async (c) => {
         const body = await c.req.json()
         const parsed = VerifyRequestSchema.safeParse(body)
         if (!parsed.success) {
-            return badRequest(c, 'resultId, sourceUrl, and newDomain are required')
+            return badRequest(c, 'sourceUrl and newDomain are required')
         }
 
-        const { resultId, sourceUrl, newDomain, useOverrideToken, edgeOverrideToken } = parsed.data
+        const { resultId, sourceUrl, newDomain, followRedirects, useOverrideToken, edgeOverrideToken } = parsed.data
+
+        // Stateless mode (MCP check_url) — just check, don't persist.
+        if (!resultId) {
+            const result = await checkUrlStatus(sourceUrl, newDomain, {
+                followRedirects: followRedirects ?? true,
+                retryAttempts: 3,
+                timeoutSeconds: 10,
+                useOverrideToken,
+                edgeOverrideToken
+            })
+            return c.json(result)
+        }
 
         const existingResult = await db.urlResult.findUnique({
             where: { id: resultId }

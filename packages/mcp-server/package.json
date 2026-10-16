@@ -1,0 +1,38 @@
+{
+  "name": "mcp-server",
+  "private": true,
+  "version": "0.1.0",
+  "description": "urlCompare MCP server — tool surface over UrlCompareService, stdio + stateless HTTP transports.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "types": "./src/*.ts",
+      "default": "./src/*.ts"
+    }
+  },
+  "bin": {
+    "urlcompare-mcp": "./dist/stdio.mjs"
+  },
+  "scripts": {
+    "stdio": "tsx src/stdio.ts",
+    "bundle": "esbuild src/stdio.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/stdio.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "shared-types": "*",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.20.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
+  }
+}

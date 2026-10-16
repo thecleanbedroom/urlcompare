@@ -10,6 +10,8 @@ import { googleAuthRoute } from './routes/google-auth'
 import { jobsRoute } from './routes/jobs'
 import { urlsetsRoute } from './routes/urlsets'
 import { verifyRoute } from './routes/verify'
+import { handleMcpRequest } from 'mcp-server'
+import { createUrlCompareService } from './services/urlcompare-service'
 
 export const app = new Hono()
 
@@ -30,6 +32,10 @@ app.get('/health', c => c.json({ status: 'ok' }))
 app.get('/api/health', c => c.json({ message: 'Good!' }))
 
 app.use('/api/*', apiKeyAuth)
+app.use('/mcp', apiKeyAuth)
+
+const mcpService = createUrlCompareService()
+app.all('/mcp', c => handleMcpRequest(mcpService, c.req.raw))
 
 app.route('/api/comparison', comparisonsRoute)
 app.route('/api/discovery', discoveryRoute)

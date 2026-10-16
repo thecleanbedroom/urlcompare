@@ -1,0 +1,36 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/mcp-server-card/v1.json",
+  "version": "1.0",
+  "protocolVersion": "2025-11-25",
+  "serverInfo": {
+    "name": "urlcompare",
+    "title": "urlCompare — URL Migration Checker",
+    "version": "1.0.0"
+  },
+  "description": "URL migration QA server: discover a site's URLs (crawl, sitemap, Google Search Console), review the merged URL set, then compare every path against a new domain and inspect per-URL verdicts (OK / Redirected / Missing / Error), redirect chains, and summaries.",
+  "instructions": "Workflow: discover_urls → get_job_status (until completed → url_set_id) → optional list_discovered_urls / update_url_set → start_comparison(url_set_id or source_urls, new_domain) → get_job_status → get_comparison_report. check_url = single synchronous spot-check. Jobs are async — poll; never assume instant results. GSC needs a connected account (gsc_not_connected → web UI).",
+  "capabilities": {
+    "tools": {
+      "count": 9,
+      "names": [
+        "discover_urls",
+        "list_discovered_urls",
+        "update_url_set",
+        "start_comparison",
+        "get_job_status",
+        "get_comparison_report",
+        "check_url",
+        "cancel_job",
+        "list_jobs"
+      ]
+    },
+    "resources": {
+      "count": 3,
+      "names": [
+        "url-sets",
+        "url-set",
+        "jobs"
+      ]
+    }
+  }
+}
