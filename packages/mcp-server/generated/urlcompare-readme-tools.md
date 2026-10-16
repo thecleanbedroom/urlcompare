@@ -27,7 +27,7 @@ Add to your MCP client configuration:
 | `get_comparison_report` | Return the full results of a comparison job — per-URL verdicts, status codes, redirect chains — plus the ok/redirected/missing/error summary. | 1 required, 2 optional |
 | `check_url` | Synchronously check one source URL's path on a new domain and return the verdict — status code, redirect chain, final URL, and OK/Redirected/Missing/Error result. | 2 required, 1 optional |
 | `cancel_job` | Cancel a running or pending discovery/comparison job, stopping further work. | 1 required, 1 optional |
-| `list_jobs` | List recent discovery and comparison jobs — ids, names, statuses, and targets — to find jobs to poll, report on, or cancel. | 0 required, 1 optional |
+| `list_jobs` | Browse the history of recent discovery and comparison jobs — their ids, names, statuses, and targets — when no specific job is known. | 0 required, 1 optional |
 
 ### Tool Reference
 
@@ -86,9 +86,9 @@ Add to your MCP client configuration:
 
 **Purpose:** Read the canonicalized URLs in a URL set — the merged output of a discovery job — with per-URL source attribution and included flags.
 
-**When to use:** When the user wants to inspect what a discovery job found, review which URLs would feed a comparison, or enumerate the members of a URL set. Provide the url_set_id (from get_job_status on a completed discovery job, or the urlcompare://urlsets resource).
+**When to use:** When the user asks to see the URLs a discovery found — 'show me the URLs the crawl found', 'what's in the URL set', 'which URLs will be compared', 'list the discovered urls'. Provide the url_set_id (from get_job_status on a completed discovery job, or the urlcompare://urlsets resource).
 
-**When NOT to use:** Do not use to list the SETS themselves — read the urlcompare://urlsets resource or list_jobs. Do not use for comparison RESULTS — use get_comparison_report.
+**When NOT to use:** Do not use for comparison RESULTS — get_comparison_report. Do not use to browse jobs — list_jobs. Do not use to change which URLs are included — update_url_set.
 
 **Parameters:**
 
@@ -116,11 +116,11 @@ Add to your MCP client configuration:
 
 **Example queries:**
 
-- "Show me the URLs the discovery job found"
-- "What pages are in URL set cm0abc123?"
-- "List the discovered urls for that set"
-- "Which URLs will be included in the comparison?"
-- "Give me the first 100 urls in the set"
+- "Show me the URLs in set cm0abc123def456"
+- "What pages did the discovery job find? The set id is cm0abc123"
+- "List the urls in URL set cm0abc123"
+- "Which URLs in set cm0abc123 are included?"
+- "Give me the first 100 urls of set cm0abc123"
 
 ---
 
@@ -128,7 +128,7 @@ Add to your MCP client configuration:
 
 **Purpose:** Toggle whether individual URLs in a set are included in future comparisons, and/or add manual URLs to the set.
 
-**When to use:** When the user wants to exclude specific URLs from a comparison ('drop the /feed/* urls', 'don't include the admin pages') or add URLs the discovery missed. Toggles take effect on the NEXT comparison — running jobs already snapshotted their URL list.
+**When to use:** When the user wants to EDIT which URLs are in a comparison set — 'exclude these urls', 'don't include the admin pages', 'add this url to the set', 'mark that URL excluded', 'remove the feed urls'. Toggles take effect on the NEXT comparison — running jobs already snapshotted their URL list.
 
 **When NOT to use:** Do not use to create a new URL set — that only happens via discover_urls. Do not use to change an in-flight comparison's URL list — that's fixed at start_comparison time.
 
@@ -157,11 +157,11 @@ Add to your MCP client configuration:
 
 **Example queries:**
 
-- "Exclude the /feed/* urls from that set"
-- "Add https://old-site.com/hidden-page to the URL set"
-- "Don't include the admin pages in the comparison"
-- "Mark that URL as excluded"
-- "Add these two pages to the discovered set manually"
+- "Exclude url cm0x1 from set cm0abc123"
+- "Add https://old-site.com/hidden-page to URL set cm0abc123"
+- "Don't include the /feed/ urls — toggle them off in set cm0abc123"
+- "Mark url cm0x1 as excluded"
+- "Add these two pages to set cm0abc123 manually"
 
 ---
 
@@ -169,7 +169,7 @@ Add to your MCP client configuration:
 
 **Purpose:** Start a comparison job that checks every source URL's path on the new domain — recording status codes, redirect chains, and a final verdict (OK / Redirected / Missing / Error) per URL.
 
-**When to use:** When the user wants to verify a domain migration — 'do all these old URLs exist on the new site', 'check the migration', 'compare the discovered set against staging'. Either url_set_id (a discovered set — its included URLs are snapshotted) or source_urls (ad-hoc list) is required, plus new_domain.
+**When to use:** When the user wants to verify MANY URLs or a whole URL set against a new domain — 'do all these old URLs exist on the new site', 'check the migration', 'test the discovered set against staging', 'verify these URLs resolve', 'run the comparison'. Either url_set_id (a discovered set — its included URLs are snapshotted) or source_urls (ad-hoc list) is required, plus new_domain.
 
 **When NOT to use:** Do not use to check a single URL — use check_url. Do not use to find a site's URLs — use discover_urls first.
 
@@ -204,11 +204,11 @@ Add to your MCP client configuration:
 
 **Example queries:**
 
-- "Check if all the discovered URLs work on https://new-site.com"
-- "Start a comparison of that URL set against staging.example.com"
-- "Do these old URLs resolve on the new domain?"
-- "Run the migration check against https://new-site.com"
-- "Compare these 5 URLs to the new site: ..."
+- "Compare URL set cm0abc123 against https://new-site.com"
+- "Check if the urls in set cm0abc123 work on staging.example.com"
+- "Compare https://old.com/a and https://old.com/b to https://new-site.com"
+- "Run the migration check on set cm0abc123 against the new domain"
+- "Start a comparison of these urls to https://new-site.com: https://a.com, https://a.com/x"
 
 ---
 
@@ -216,9 +216,9 @@ Add to your MCP client configuration:
 
 **Purpose:** Poll the progress of a discovery or comparison job — status, completion counts, and (for discoveries) the produced url_set_id.
 
-**When to use:** After discover_urls or start_comparison returns a job_id — poll until status is 'completed', 'failed', or 'cancelled'. For comparisons, progress shows completed/total URLs; for discoveries, pages_visited and the resulting url_set_id.
+**When to use:** When the user asks whether a job is finished, still running, or how far along it is — 'is the crawl done', 'check the job status', how many URLs have been checked so far. Poll after discover_urls or start_comparison returns a job_id.
 
-**When NOT to use:** Do not use for full results — get_comparison_report returns the actual per-URL verdicts. Do not use to list all jobs — use list_jobs.
+**When NOT to use:** Do not use for the actual results or verdicts — get_comparison_report returns per-URL outcomes. Do not use to browse all jobs — list_jobs. Do not use to stop a job — cancel_job.
 
 **Parameters:**
 
@@ -246,11 +246,11 @@ Add to your MCP client configuration:
 
 **Example queries:**
 
-- "Is the crawl finished yet?"
+- "Is job cm0abc123 finished yet?"
 - "What's the status of job cm0abc123?"
-- "How far along is the comparison?"
-- "Check if my discovery job is done"
-- "Did the migration check complete?"
+- "How far along is comparison job cm0abc123?"
+- "Check if discovery job cm0abc123 is done"
+- "Did the comparison cm0abc123 complete?"
 
 ---
 
@@ -258,9 +258,9 @@ Add to your MCP client configuration:
 
 **Purpose:** Return the full results of a comparison job — per-URL verdicts, status codes, redirect chains — plus the ok/redirected/missing/error summary.
 
-**When to use:** When the user wants the outcome of a comparison — 'how did the migration check go', 'which URLs are missing on the new domain', 'show me the results / the failures'. Use after get_job_status shows 'completed' (partial results work for running jobs but are not final).
+**When to use:** When the user asks for the RESULTS of a comparison — 'show me the results', 'which URLs failed/are missing', 'the migration report', 'how many 404s', 'list the redirects'. Returns per-URL verdicts plus the ok/redirected/missing/error summary counts.
 
-**When NOT to use:** Do not use for job progress — get_job_status. Do not use to list discovered URLs — list_discovered_urls.
+**When NOT to use:** Do not use for job progress or whether it finished — get_job_status. Do not use for the URLs a DISCOVERY found — list_discovered_urls.
 
 **Parameters:**
 
@@ -290,11 +290,11 @@ Add to your MCP client configuration:
 
 **Example queries:**
 
-- "Show me the comparison results"
-- "Which URLs are missing on the new domain?"
+- "Show me the results of comparison job cm0abc123"
+- "Which URLs are missing in job cm0abc123?"
 - "Give me the migration report for job cm0abc123"
-- "How many pages returned 404 on the new site?"
-- "List all the redirected URLs from that comparison"
+- "How many pages returned 404 in job cm0abc123?"
+- "List all the redirected URLs from job cm0abc123"
 
 ---
 
@@ -304,7 +304,7 @@ Add to your MCP client configuration:
 
 **When to use:** For one-off spot checks — 'does old-site.com/pricing exist on the new domain', 'verify this URL before the launch'. Returns immediately with the verdict; no job is created.
 
-**When NOT to use:** Do not use for bulk checks — start_comparison handles lists efficiently with concurrency. Do not use to enumerate site URLs — discover_urls.
+**When NOT to use:** Do not use when there is more than one URL or the user refers to a set/list/collection of URLs ('these URLs', 'the set', 'all the URLs') — that is start_comparison. Do not use to enumerate site URLs — discover_urls.
 
 **Parameters:**
 
@@ -345,7 +345,7 @@ Add to your MCP client configuration:
 
 **Purpose:** Cancel a running or pending discovery/comparison job, stopping further work.
 
-**When to use:** When the user wants to stop an in-flight job — 'cancel that crawl', 'stop the comparison'. Only affects pending/running jobs; completed/failed jobs are untouched.
+**When to use:** When the user wants to STOP or CANCEL a job — 'cancel the crawl', 'stop the comparison', 'kill that job', 'abort the discovery'. Only affects pending/running jobs; completed/failed jobs are untouched.
 
 **When NOT to use:** Do not use to delete job records — cancellation stops work but keeps the job's results. Do not use for finished jobs (no-op).
 
@@ -371,20 +371,20 @@ Add to your MCP client configuration:
 
 **Example queries:**
 
-- "Cancel the running crawl"
-- "Stop that comparison job"
+- "Cancel job cm0abc123"
+- "Stop comparison job cm0abc123"
 - "Kill job cm0abc123, it's taking too long"
-- "Abort the discovery"
+- "Abort discovery job cm0abc123"
 
 ---
 
 ### list_jobs
 
-**Purpose:** List recent discovery and comparison jobs — ids, names, statuses, and targets — to find jobs to poll, report on, or cancel.
+**Purpose:** Browse the history of recent discovery and comparison jobs — their ids, names, statuses, and targets — when no specific job is known.
 
-**When to use:** When the user asks 'what jobs have run', needs to find a job_id, or wants an overview of recent activity. Optional kind filter narrows to comparisons or discoveries.
+**When to use:** Only when the user asks 'what jobs have run', 'show recent activity', or needs to DISCOVER a job_id they don't already have. This is a browsing tool — it returns a list, not a specific job's details.
 
-**When NOT to use:** Do not use for a specific job's progress — get_job_status. Do not use for URL set contents — list_discovered_urls or the urlcompare://urlsets resource.
+**When NOT to use:** Do not use when the user wants to: check a specific job's progress or whether it finished (get_job_status), see a comparison's results or which URLs failed (get_comparison_report), stop or cancel a job (cancel_job), see the URLs a discovery found (list_discovered_urls), or modify a URL set (update_url_set). Those tools take the job_id directly — never call list_jobs first when the id or intent is already known.
 
 **Parameters:**
 

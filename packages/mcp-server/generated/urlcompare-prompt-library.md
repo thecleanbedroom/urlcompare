@@ -15,45 +15,45 @@ Curated natural-language phrasings that route correctly to this server's MCP too
 
 ## List Discovered URLs
 
-- "Show me the URLs the discovery job found"
-- "What pages are in URL set cm0abc123?"
-- "List the discovered urls for that set"
-- "Which URLs will be included in the comparison?"
-- "Give me the first 100 urls in the set"
+- "Show me the URLs in set cm0abc123def456"
+- "What pages did the discovery job find? The set id is cm0abc123"
+- "List the urls in URL set cm0abc123"
+- "Which URLs in set cm0abc123 are included?"
+- "Give me the first 100 urls of set cm0abc123"
 
 ## Update URL Set
 
-- "Exclude the /feed/* urls from that set"
-- "Add https://old-site.com/hidden-page to the URL set"
-- "Don't include the admin pages in the comparison"
-- "Mark that URL as excluded"
-- "Add these two pages to the discovered set manually"
+- "Exclude url cm0x1 from set cm0abc123"
+- "Add https://old-site.com/hidden-page to URL set cm0abc123"
+- "Don't include the /feed/ urls — toggle them off in set cm0abc123"
+- "Mark url cm0x1 as excluded"
+- "Add these two pages to set cm0abc123 manually"
 
 ## Start Comparison
 
-- "Check if all the discovered URLs work on https://new-site.com"
-- "Start a comparison of that URL set against staging.example.com"
-- "Do these old URLs resolve on the new domain?"
-- "Run the migration check against https://new-site.com"
-- "Compare these 5 URLs to the new site: ..."
-- "Verify the migration — test the whole set on the new domain"
+- "Compare URL set cm0abc123 against https://new-site.com"
+- "Check if the urls in set cm0abc123 work on staging.example.com"
+- "Compare https://old.com/a and https://old.com/b to https://new-site.com"
+- "Run the migration check on set cm0abc123 against the new domain"
+- "Start a comparison of these urls to https://new-site.com: https://a.com, https://a.com/x"
+- "Verify the migration — test set cm0abc123 on the new domain"
 
 ## Get Job Status
 
-- "Is the crawl finished yet?"
+- "Is job cm0abc123 finished yet?"
 - "What's the status of job cm0abc123?"
-- "How far along is the comparison?"
-- "Check if my discovery job is done"
-- "Did the migration check complete?"
+- "How far along is comparison job cm0abc123?"
+- "Check if discovery job cm0abc123 is done"
+- "Did the comparison cm0abc123 complete?"
 
 ## Get Comparison Report
 
-- "Show me the comparison results"
-- "Which URLs are missing on the new domain?"
+- "Show me the results of comparison job cm0abc123"
+- "Which URLs are missing in job cm0abc123?"
 - "Give me the migration report for job cm0abc123"
-- "How many pages returned 404 on the new site?"
-- "List all the redirected URLs from that comparison"
-- "Summarize the results — what failed?"
+- "How many pages returned 404 in job cm0abc123?"
+- "List all the redirected URLs from job cm0abc123"
+- "Summarize the results of job cm0abc123 — what failed?"
 
 ## Check Single URL
 
@@ -64,10 +64,10 @@ Curated natural-language phrasings that route correctly to this server's MCP too
 
 ## Cancel Job
 
-- "Cancel the running crawl"
-- "Stop that comparison job"
+- "Cancel job cm0abc123"
+- "Stop comparison job cm0abc123"
 - "Kill job cm0abc123, it's taking too long"
-- "Abort the discovery"
+- "Abort discovery job cm0abc123"
 
 ## List Jobs
 

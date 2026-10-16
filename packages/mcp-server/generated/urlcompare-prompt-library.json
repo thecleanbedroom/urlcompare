@@ -37,71 +37,71 @@
     },
     {
       "tool": "list_discovered_urls",
-      "phrasing": "Show me the URLs the discovery job found"
+      "phrasing": "Show me the URLs in set cm0abc123def456"
     },
     {
       "tool": "list_discovered_urls",
-      "phrasing": "What pages are in URL set cm0abc123?"
+      "phrasing": "What pages did the discovery job find? The set id is cm0abc123"
     },
     {
       "tool": "list_discovered_urls",
-      "phrasing": "List the discovered urls for that set"
+      "phrasing": "List the urls in URL set cm0abc123"
     },
     {
       "tool": "list_discovered_urls",
-      "phrasing": "Which URLs will be included in the comparison?"
+      "phrasing": "Which URLs in set cm0abc123 are included?"
     },
     {
       "tool": "list_discovered_urls",
-      "phrasing": "Give me the first 100 urls in the set"
+      "phrasing": "Give me the first 100 urls of set cm0abc123"
     },
     {
       "tool": "update_url_set",
-      "phrasing": "Exclude the /feed/* urls from that set"
+      "phrasing": "Exclude url cm0x1 from set cm0abc123"
     },
     {
       "tool": "update_url_set",
-      "phrasing": "Add https://old-site.com/hidden-page to the URL set"
+      "phrasing": "Add https://old-site.com/hidden-page to URL set cm0abc123"
     },
     {
       "tool": "update_url_set",
-      "phrasing": "Don't include the admin pages in the comparison"
+      "phrasing": "Don't include the /feed/ urls — toggle them off in set cm0abc123"
     },
     {
       "tool": "update_url_set",
-      "phrasing": "Mark that URL as excluded"
+      "phrasing": "Mark url cm0x1 as excluded"
     },
     {
       "tool": "update_url_set",
-      "phrasing": "Add these two pages to the discovered set manually"
+      "phrasing": "Add these two pages to set cm0abc123 manually"
     },
     {
       "tool": "start_comparison",
-      "phrasing": "Check if all the discovered URLs work on https://new-site.com"
+      "phrasing": "Compare URL set cm0abc123 against https://new-site.com"
     },
     {
       "tool": "start_comparison",
-      "phrasing": "Start a comparison of that URL set against staging.example.com"
+      "phrasing": "Check if the urls in set cm0abc123 work on staging.example.com"
     },
     {
       "tool": "start_comparison",
-      "phrasing": "Do these old URLs resolve on the new domain?"
+      "phrasing": "Compare https://old.com/a and https://old.com/b to https://new-site.com"
     },
     {
       "tool": "start_comparison",
-      "phrasing": "Run the migration check against https://new-site.com"
+      "phrasing": "Run the migration check on set cm0abc123 against the new domain"
     },
     {
       "tool": "start_comparison",
-      "phrasing": "Compare these 5 URLs to the new site: ..."
+      "phrasing": "Start a comparison of these urls to https://new-site.com: https://a.com, https://a.com/x"
     },
     {
       "tool": "start_comparison",
-      "phrasing": "Verify the migration — test the whole set on the new domain"
+      "phrasing": "Verify the migration — test set cm0abc123 on the new domain"
     },
     {
       "tool": "get_job_status",
-      "phrasing": "Is the crawl finished yet?"
+      "phrasing": "Is job cm0abc123 finished yet?"
     },
     {
       "tool": "get_job_status",
@@ -109,23 +109,23 @@
     },
     {
       "tool": "get_job_status",
-      "phrasing": "How far along is the comparison?"
+      "phrasing": "How far along is comparison job cm0abc123?"
     },
     {
       "tool": "get_job_status",
-      "phrasing": "Check if my discovery job is done"
+      "phrasing": "Check if discovery job cm0abc123 is done"
     },
     {
       "tool": "get_job_status",
-      "phrasing": "Did the migration check complete?"
+      "phrasing": "Did the comparison cm0abc123 complete?"
     },
     {
       "tool": "get_comparison_report",
-      "phrasing": "Show me the comparison results"
+      "phrasing": "Show me the results of comparison job cm0abc123"
     },
     {
       "tool": "get_comparison_report",
-      "phrasing": "Which URLs are missing on the new domain?"
+      "phrasing": "Which URLs are missing in job cm0abc123?"
     },
     {
       "tool": "get_comparison_report",
@@ -133,15 +133,15 @@
     },
     {
       "tool": "get_comparison_report",
-      "phrasing": "How many pages returned 404 on the new site?"
+      "phrasing": "How many pages returned 404 in job cm0abc123?"
     },
     {
       "tool": "get_comparison_report",
-      "phrasing": "List all the redirected URLs from that comparison"
+      "phrasing": "List all the redirected URLs from job cm0abc123"
     },
     {
       "tool": "get_comparison_report",
-      "phrasing": "Summarize the results — what failed?"
+      "phrasing": "Summarize the results of job cm0abc123 — what failed?"
     },
     {
       "tool": "check_url",
@@ -161,11 +161,11 @@
     },
     {
       "tool": "cancel_job",
-      "phrasing": "Cancel the running crawl"
+      "phrasing": "Cancel job cm0abc123"
     },
     {
       "tool": "cancel_job",
-      "phrasing": "Stop that comparison job"
+      "phrasing": "Stop comparison job cm0abc123"
     },
     {
       "tool": "cancel_job",
@@ -173,7 +173,7 @@
     },
     {
       "tool": "cancel_job",
-      "phrasing": "Abort the discovery"
+      "phrasing": "Abort discovery job cm0abc123"
     },
     {
       "tool": "list_jobs",
