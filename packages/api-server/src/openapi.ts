@@ -120,12 +120,18 @@ export const openApiSpec = {
     info: {
         title: 'urlCompare API',
         version: '1.0.0',
+        license: { name: 'MIT' },
         description:
             'URL migration QA API: discover a site\'s URLs (crawl / sitemap / Google Search Console) into a URL set, ' +
             'review it, then compare every path against a new domain. All jobs are durable and asynchronous — POST to ' +
             'create, poll the job endpoint until status=completed. The MCP Streamable HTTP transport is mounted at POST /mcp.',
     },
-    servers: [{ url: 'http://localhost:3001', description: 'local dev' }],
+    servers: [
+        { url: 'https://urlcompare.backbaymedia.org', description: 'production (via web proxy)' },
+        { url: 'http://localhost:3001', description: 'local dev' },
+    ],
+    // apiKey is optional — the {} alternative marks anonymous access allowed.
+    security: [{ apiKey: [] }, {}],
     tags: [
         { name: 'Discovery', description: 'Multi-source URL discovery jobs' },
         { name: 'URL Sets', description: 'Reviewable, editable collections of discovered URLs' },
@@ -153,9 +159,10 @@ export const openApiSpec = {
         },
     },
     paths: {
-        '/health': {
+        '/api/health': {
             get: {
                 tags: ['System'],
+                operationId: 'health_check',
                 summary: 'Liveness check',
                 responses: { 200: { description: 'OK' } },
             },
@@ -163,6 +170,7 @@ export const openApiSpec = {
         '/mcp': {
             post: {
                 tags: ['System'],
+                operationId: 'mcp_endpoint',
                 summary: 'MCP Streamable HTTP endpoint',
                 description:
                     'JSON-RPC endpoint implementing the Model Context Protocol — initialize, tools/list, ' +
@@ -182,6 +190,7 @@ export const openApiSpec = {
         '/api/discovery': {
             post: {
                 tags: ['Discovery'],
+                operationId: 'start_discovery',
                 summary: 'Start a discovery job',
                 description:
                     'Runs the selected sources (link crawl, sitemap.xml, Search Console) and merges results ' +
@@ -237,6 +246,7 @@ export const openApiSpec = {
             },
             get: {
                 tags: ['Discovery'],
+                operationId: 'list_discovery_jobs',
                 summary: 'List discovery jobs',
                 parameters: [
                     { name: 'limit', in: 'query', schema: { type: 'integer', default: 50 } },
@@ -263,6 +273,7 @@ export const openApiSpec = {
         '/api/discovery/{id}': {
             get: {
                 tags: ['Discovery'],
+                operationId: 'get_discovery_job',
                 summary: 'Get a discovery job',
                 parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
                 responses: {
@@ -272,6 +283,7 @@ export const openApiSpec = {
             },
             delete: {
                 tags: ['Discovery'],
+                operationId: 'cancel_discovery_job',
                 summary: 'Cancel a discovery job',
                 parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
                 responses: {
@@ -283,6 +295,7 @@ export const openApiSpec = {
         '/api/urlsets': {
             get: {
                 tags: ['URL Sets'],
+                operationId: 'list_url_sets',
                 summary: 'List URL sets',
                 parameters: [
                     { name: 'limit', in: 'query', schema: { type: 'integer', default: 50 } },
@@ -309,6 +322,7 @@ export const openApiSpec = {
         '/api/urlsets/{id}': {
             get: {
                 tags: ['URL Sets'],
+                operationId: 'get_url_set',
                 summary: 'Get a URL set with its URLs',
                 parameters: [
                     { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
@@ -338,6 +352,7 @@ export const openApiSpec = {
             },
             patch: {
                 tags: ['URL Sets'],
+                operationId: 'update_url_set',
                 summary: 'Edit a URL set',
                 description: 'Toggle inclusion flags and/or add manual URLs (canonicalized, merged on collision).',
                 parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
@@ -374,6 +389,7 @@ export const openApiSpec = {
         '/api/comparison': {
             post: {
                 tags: ['Comparison'],
+                operationId: 'start_comparison',
                 summary: 'Start a comparison job',
                 description:
                     'Checks every source URL\'s path on the new domain. Exactly one of `urlSetId` (snapshots the ' +
@@ -418,6 +434,7 @@ export const openApiSpec = {
             },
             get: {
                 tags: ['Comparison'],
+                operationId: 'get_comparison',
                 summary: 'Get a comparison job + results',
                 parameters: [{ name: 'jobId', in: 'query', required: true, schema: { type: 'string' } }],
                 responses: {
@@ -441,6 +458,7 @@ export const openApiSpec = {
             },
             delete: {
                 tags: ['Comparison'],
+                operationId: 'cancel_comparison',
                 summary: 'Cancel a comparison job',
                 parameters: [{ name: 'jobId', in: 'query', required: true, schema: { type: 'string' } }],
                 responses: {
@@ -452,6 +470,7 @@ export const openApiSpec = {
         '/api/jobs': {
             get: {
                 tags: ['Comparison'],
+                operationId: 'list_comparison_jobs',
                 summary: 'List recent comparison jobs',
                 responses: {
                     200: {
@@ -468,6 +487,7 @@ export const openApiSpec = {
         '/api/verify': {
             post: {
                 tags: ['Comparison'],
+                operationId: 'verify_url',
                 summary: 'Check a single URL (stateless or persisted)',
                 description:
                     'Checks one source URL\'s path on the new domain synchronously. With `resultId`, re-verifies ' +
@@ -504,6 +524,7 @@ export const openApiSpec = {
         '/api/export': {
             get: {
                 tags: ['Comparison'],
+                operationId: 'export_comparison',
                 summary: 'Export a comparison job',
                 parameters: [
                     { name: 'jobId', in: 'query', required: true, schema: { type: 'string' } },
@@ -519,6 +540,7 @@ export const openApiSpec = {
         '/api/auth/google/start': {
             get: {
                 tags: ['Google Auth'],
+                operationId: 'google_auth_start',
                 summary: 'Begin OAuth2 flow',
                 description: '302-redirects to the Google consent screen. Browser flow — not an API call.',
                 responses: { 302: { description: 'Redirect to Google' } },
@@ -527,6 +549,7 @@ export const openApiSpec = {
         '/api/auth/google/callback': {
             get: {
                 tags: ['Google Auth'],
+                operationId: 'google_auth_callback',
                 summary: 'OAuth2 callback',
                 description: 'Google redirects here after consent; exchanges the code and stores credentials, then redirects to WEB_URL with ?gsc=connected|error.',
                 parameters: [
@@ -539,6 +562,7 @@ export const openApiSpec = {
         '/api/auth/google/status': {
             get: {
                 tags: ['Google Auth'],
+                operationId: 'google_auth_status',
                 summary: 'Connection status',
                 responses: {
                     200: {
@@ -561,6 +585,7 @@ export const openApiSpec = {
         '/api/auth/google/disconnect': {
             delete: {
                 tags: ['Google Auth'],
+                operationId: 'google_auth_disconnect',
                 summary: 'Disconnect Google',
                 responses: { 200: { description: 'Disconnected' } },
             },
