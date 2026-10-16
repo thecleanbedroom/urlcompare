@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       { source: '/api/:path*', destination: `${apiUrl}/api/:path*` },
+      { source: '/mcp/:path*', destination: `${apiUrl}/mcp` },
     ];
   },
   reactStrictMode: false,

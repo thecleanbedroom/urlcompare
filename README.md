@@ -35,7 +35,7 @@ Open http://localhost:3000 — the web UI proxies `/api/*` to the API server aut
 
 ## MCP server
 
-The API server mounts a stateless Streamable HTTP MCP endpoint at **`POST /mcp`** (same port, same API-key middleware). Tools: `discover_urls`, `list_discovered_urls`, `update_url_set`, `start_comparison`, `get_job_status`, `get_comparison_report`, `check_url`, `cancel_job`, `list_jobs`. Resources: `urlcompare://urlsets{,/{id}}`, `urlcompare://jobs`.
+The API server mounts a stateless Streamable HTTP MCP endpoint at **`POST /mcp`** (same port, same API-key middleware). It's also proxied through the web app — `POST http://localhost:3000/mcp` works too. Tools: `discover_urls`, `list_discovered_urls`, `update_url_set`, `start_comparison`, `get_job_status`, `get_comparison_report`, `check_url`, `cancel_job`, `list_jobs`. Resources: `urlcompare://urlsets{,/{id}}`, `urlcompare://jobs`.
 
 Stdio transport (for local agents — talks REST to a running API):
 
