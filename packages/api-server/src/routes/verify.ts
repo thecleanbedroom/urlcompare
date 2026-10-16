@@ -1,42 +1,34 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { checkUrlStatus } from 'shared-logic'
-import { safeParseJson, toJsonString } from 'shared-logic'
+import { Hono } from 'hono'
+import { db } from '../lib/db'
+import { badRequest, notFound, serverError } from '../lib/http'
+import { checkUrlStatus, safeParseJson, toJsonString } from 'shared-logic'
+import { z } from 'zod'
 
-interface VerifyRequest {
-    resultId: string
-    sourceUrl: string
-    newDomain: string
-    useOverrideToken?: boolean
-    edgeOverrideToken?: string
-}
+const VerifyRequestSchema = z.object({
+    resultId: z.string().min(1),
+    sourceUrl: z.string().url(),
+    newDomain: z.string().min(1),
+    useOverrideToken: z.boolean().optional(),
+    edgeOverrideToken: z.string().optional(),
+})
 
-export async function POST(request: NextRequest) {
+export const verifyRoute = new Hono()
+
+verifyRoute.post('/', async (c) => {
     try {
-        const body: VerifyRequest = await request.json()
-        const { resultId, sourceUrl, newDomain, useOverrideToken, edgeOverrideToken } = body
-
-        // Validate input
-        if (!resultId || !sourceUrl || !newDomain) {
-            return NextResponse.json(
-                { error: 'resultId, sourceUrl, and newDomain are required' },
-                { status: 400 }
-            )
+        const body = await c.req.json()
+        const parsed = VerifyRequestSchema.safeParse(body)
+        if (!parsed.success) {
+            return badRequest(c, 'resultId, sourceUrl, and newDomain are required')
         }
 
-        // Check if result exists
+        const { resultId, sourceUrl, newDomain, useOverrideToken, edgeOverrideToken } = parsed.data
+
         const existingResult = await db.urlResult.findUnique({
             where: { id: resultId }
         })
+        if (!existingResult) return notFound(c, 'Result not found')
 
-        if (!existingResult) {
-            return NextResponse.json(
-                { error: 'Result not found' },
-                { status: 404 }
-            )
-        }
-
-        // Re-run the URL check
         const updatedResult = await checkUrlStatus(sourceUrl, newDomain, {
             followRedirects: true,
             retryAttempts: 3,
@@ -45,7 +37,6 @@ export async function POST(request: NextRequest) {
             edgeOverrideToken
         })
 
-        // Update database record
         const savedResult = await db.urlResult.update({
             where: { id: resultId },
             data: {
@@ -60,8 +51,7 @@ export async function POST(request: NextRequest) {
             }
         })
 
-        // Return updated result in the same format as the comparison API
-        return NextResponse.json({
+        return c.json({
             id: savedResult.id,
             sourceUrl: savedResult.sourceUrl,
             newUrl: savedResult.newUrl,
@@ -72,12 +62,8 @@ export async function POST(request: NextRequest) {
             error: savedResult.error,
             checkedAt: savedResult.checkedAt.toISOString()
         })
-
     } catch (error) {
         console.error('Error verifying URL:', error)
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        )
+        return serverError(c)
     }
-}
+})

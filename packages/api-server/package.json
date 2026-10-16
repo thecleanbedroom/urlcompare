@@ -1,0 +1,38 @@
+{
+  "name": "api-server",
+  "private": true,
+  "version": "0.1.0",
+  "description": "urlCompare API server — Hono, Prisma, in-process job runner.",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "bundle": "esbuild src/server.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/server.mjs --external:@prisma/client --external:.prisma --external:better-sqlite3 --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\"",
+    "start": "node dist/server.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "db:push": "prisma db push",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "@prisma/adapter-better-sqlite3": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "better-sqlite3": "^12.9.0",
+    "dotenv": "^17.4.2",
+    "hono": "^4.13.5",
+    "shared-logic": "*",
+    "shared-types": "*",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.6.0",
+    "esbuild": "^0.28.2",
+    "prisma": "^7.8.0",
+    "tsx": "^4.20.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
+  }
+}
