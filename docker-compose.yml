@@ -9,13 +9,19 @@ services:
       - DATABASE_URL=file:/app/db/custom.db
       - PORT=3001
       - HOST=0.0.0.0
-      - WEB_URL=http://localhost:3000
+      - WEB_URL=http://127.0.0.1:3000
       # - API_KEY=change-me                       # required if the API port is exposed beyond the web proxy
       # - GOOGLE_CLIENT_ID=
       # - GOOGLE_CLIENT_SECRET=
-      # - GOOGLE_REDIRECT_URI=http://localhost:3001/api/auth/google/callback
+      # - GOOGLE_REDIRECT_URI=http://127.0.0.1:3001/api/auth/google/callback
     volumes:
       - db-data:/app/db
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: unless-stopped
 
   web:
@@ -31,7 +37,14 @@ services:
       - PORT=3000
       - HOSTNAME=0.0.0.0
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: unless-stopped
 
 volumes:
