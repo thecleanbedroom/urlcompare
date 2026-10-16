@@ -18,8 +18,9 @@ export async function createComparisonJob(params: {
     newDomain: string
     config: ComparisonJobConfig
     name?: string
+    urlSetId?: string
 }) {
-    const { sourceUrls, newDomain, config, name } = params
+    const { sourceUrls, newDomain, config, name, urlSetId } = params
 
     const job = await db.comparisonJob.create({
         data: {
@@ -28,7 +29,8 @@ export async function createComparisonJob(params: {
             newDomain,
             config: toJsonString(config),
             totalUrls: sourceUrls.length,
-            status: 'pending'
+            status: 'pending',
+            urlSetId,
         }
     })
 

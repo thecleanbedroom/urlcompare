@@ -4,9 +4,11 @@ import { cors } from 'hono/cors'
 import { config } from './config'
 import { apiKeyAuth } from './lib/auth'
 import { comparisonsRoute } from './routes/comparisons'
-import { crawlRoute } from './routes/crawl'
+import { discoveryRoute } from './routes/discovery'
 import { exportRoute } from './routes/export'
+import { googleAuthRoute } from './routes/google-auth'
 import { jobsRoute } from './routes/jobs'
+import { urlsetsRoute } from './routes/urlsets'
 import { verifyRoute } from './routes/verify'
 
 export const app = new Hono()
@@ -30,10 +32,12 @@ app.get('/api/health', c => c.json({ message: 'Good!' }))
 app.use('/api/*', apiKeyAuth)
 
 app.route('/api/comparison', comparisonsRoute)
-app.route('/api/crawl', crawlRoute)
+app.route('/api/discovery', discoveryRoute)
+app.route('/api/urlsets', urlsetsRoute)
 app.route('/api/jobs', jobsRoute)
 app.route('/api/verify', verifyRoute)
 app.route('/api/export', exportRoute)
+app.route('/api/auth/google', googleAuthRoute)
 
 if (!process.env.VITEST) {
     serve({

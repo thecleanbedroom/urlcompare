@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
-import { ComparisonRequestSchema } from 'shared-types'
+import { StartComparisonRequestSchema } from 'shared-types'
 import { isUrlSafe } from 'shared-logic'
 import { badRequest, formatIssues, notFound, serverError } from '../lib/http'
+import { db } from '../lib/db'
 import {
     cancelComparisonJob,
     createComparisonJob,
@@ -15,12 +16,29 @@ comparisonsRoute.post('/', async (c) => {
     try {
         const body = await c.req.json()
 
-        const parsed = ComparisonRequestSchema.safeParse(body)
+        const parsed = StartComparisonRequestSchema.safeParse(body)
         if (!parsed.success) {
             return badRequest(c, 'Validation failed', formatIssues(parsed.error))
         }
 
-        const { sourceUrls, newDomain, config = {}, name } = parsed.data
+        const { urlSetId, newDomain, config = {}, name } = parsed.data
+
+        // Resolve source URLs — either an ad-hoc list or a snapshot of
+        // the URL set's currently-included rows.
+        let sourceUrls: string[]
+        if (urlSetId) {
+            const urlSet = await db.urlSet.findUnique({
+                where: { id: urlSetId },
+                include: { urls: { where: { included: true }, select: { url: true } } },
+            })
+            if (!urlSet) return notFound(c, 'URL set not found')
+            if (urlSet.urls.length === 0) {
+                return badRequest(c, 'URL set has no included URLs')
+            }
+            sourceUrls = urlSet.urls.map(u => u.url)
+        } else {
+            sourceUrls = parsed.data.sourceUrls!
+        }
 
         // SSRF protection — reject private/internal URLs
         const unsafeUrl = sourceUrls.find(url => !isUrlSafe(url).safe)
@@ -33,7 +51,7 @@ comparisonsRoute.post('/', async (c) => {
             return badRequest(c, `New domain blocked for security: ${newDomain}`)
         }
 
-        const job = await createComparisonJob({ sourceUrls, newDomain, config: config ?? {}, name })
+        const job = await createComparisonJob({ sourceUrls, newDomain, config: config ?? {}, name, urlSetId })
 
         return c.json({
             jobId: job.id,

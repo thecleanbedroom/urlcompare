@@ -4,6 +4,7 @@
  */
 
 import { isUrlSafe } from './url-checker'
+import { canonicalizeUrl } from './canonicalize'
 import type { CrawlerOptions, CrawlResult } from 'shared-types'
 
 export type { CrawlerOptions, CrawlResult }
@@ -24,8 +25,8 @@ export class DomainCrawler {
     private baseProtocol: string;
 
     constructor(sourceDomain: string, options: CrawlerOptions) {
-        this.sourceDomain = this.normalizeUrl(sourceDomain);
         this.options = options;
+        this.sourceDomain = this.normalizeUrl(sourceDomain);
 
         // Extract base domain for filtering internal links
         const url = new URL(this.sourceDomain);
@@ -220,30 +221,15 @@ export class DomainCrawler {
     }
 
     private normalizeUrl(url: string): string {
-        try {
-            const parsed = new URL(url);
-
-            // Remove trailing slash from path (except for root)
-            if (parsed.pathname !== '/' && parsed.pathname.endsWith('/')) {
-                parsed.pathname = parsed.pathname.slice(0, -1);
-            }
-
-            // Remove default ports
-            if ((parsed.protocol === 'https:' && parsed.port === '443') ||
-                (parsed.protocol === 'http:' && parsed.port === '80')) {
-                parsed.port = '';
-            }
-
-            // Remove hash
-            parsed.hash = '';
-
-            // Sort query parameters for consistency
-            parsed.searchParams.sort();
-
-            return parsed.href;
-        } catch {
-            return url;
-        }
+        return canonicalizeUrl(url, {
+            // 'deny' with an empty list preserves every param — the
+            // crawler's pre-existing default behavior.
+            queryPolicy: this.options.queryPolicy ?? 'deny',
+            queryAllowKeys: this.options.queryAllowKeys,
+            queryDenyKeys: this.options.queryDenyKeys,
+            normalizeQuery: this.options.normalizeQuery ?? true,
+            ignoreAnchors: this.options.ignoreAnchors ?? true,
+        });
     }
 
     private delay(ms: number): Promise<void> {

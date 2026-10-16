@@ -36,11 +36,18 @@ interface UseComparisonReturn {
   runComparison: () => Promise<void>
   retryVerification: (result: UrlResult) => Promise<void>
   cancelJob: () => Promise<void>
-  handleCrawlComplete: (urls: string[]) => void
+  handleCrawlComplete: (urls: string[], urlSetId?: string) => void
 }
 
 export function useComparison(jobIdParam: string | null): UseComparisonReturn {
-  const [sourceUrls, setSourceUrls] = useState('')
+  const [sourceUrls, setSourceUrlsState] = useState('')
+  const [urlSetId, setUrlSetId] = useState<string | null>(null)
+
+  // Editing the textarea by hand detaches the URL set — the run becomes ad-hoc.
+  const setSourceUrls = (v: string) => {
+    setUrlSetId(null)
+    setSourceUrlsState(v)
+  }
   const [newDomain, setNewDomain] = useState('')
   const [jobName, setJobName] = useState('')
   const [followRedirects, setFollowRedirects] = useState(true)
@@ -59,8 +66,9 @@ export function useComparison(jobIdParam: string | null): UseComparisonReturn {
   const [activeTab, setActiveTab] = useState('manual')
   const [retryingIds, setRetryingIds] = useState<Set<string>>(new Set())
 
-  const handleCrawlComplete = (urls: string[]) => {
-    setSourceUrls(urls.join('\n'))
+  const handleCrawlComplete = (urls: string[], discoveredUrlSetId?: string) => {
+    setUrlSetId(discoveredUrlSetId ?? null)
+    setSourceUrlsState(urls.join('\n'))
     setActiveTab('manual')
   }
 
@@ -217,7 +225,7 @@ export function useComparison(jobIdParam: string | null): UseComparisonReturn {
   }
 
   const runComparison = async () => {
-    if (!sourceUrls.trim() || !newDomain.trim()) {
+    if ((!sourceUrls.trim() && !urlSetId) || !newDomain.trim()) {
       setError('Please enter source URLs and new domain')
       return
     }
@@ -228,18 +236,25 @@ export function useComparison(jobIdParam: string | null): UseComparisonReturn {
     setSummary(null)
     setProgress(0)
 
-    const urls = parseUrls(sourceUrls)
-
     try {
       const response = await fetch('/api/comparison', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sourceUrls: urls,
-          newDomain,
-          name: jobName || undefined,
-          config: { followRedirects, maxConcurrency, retryAttempts, timeoutSeconds, useOverrideToken: useOverrideToken || undefined, edgeOverrideToken: (useOverrideToken && edgeOverrideToken) || undefined },
-        }),
+        body: JSON.stringify(
+          urlSetId
+            ? {
+                urlSetId,
+                newDomain,
+                name: jobName || undefined,
+                config: { followRedirects, maxConcurrency, retryAttempts, timeoutSeconds, useOverrideToken: useOverrideToken || undefined, edgeOverrideToken: (useOverrideToken && edgeOverrideToken) || undefined },
+              }
+            : {
+                sourceUrls: parseUrls(sourceUrls),
+                newDomain,
+                name: jobName || undefined,
+                config: { followRedirects, maxConcurrency, retryAttempts, timeoutSeconds, useOverrideToken: useOverrideToken || undefined, edgeOverrideToken: (useOverrideToken && edgeOverrideToken) || undefined },
+              }
+        ),
       })
 
       if (!response.ok) throw new Error('Failed to start comparison')

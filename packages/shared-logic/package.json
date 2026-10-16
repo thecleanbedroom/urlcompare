@@ -19,6 +19,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "fast-xml-parser": "^5.11.2",
     "shared-types": "*"
   },
   "devDependencies": {

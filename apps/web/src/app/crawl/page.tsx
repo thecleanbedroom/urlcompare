@@ -25,12 +25,14 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
-interface CrawlJob {
+interface DiscoveryJob {
     id: string;
     name: string | null;
     sourceDomain: string;
     status: string;
-    totalDiscovered: number;
+    sources: string[];
+    urlSetId: string | null;
+    urlCount: number;
     pagesVisited: number;
     errorCount: number;
     createdAt: string;
@@ -38,7 +40,7 @@ interface CrawlJob {
 }
 
 export default function CrawlJobsPage() {
-    const [jobs, setJobs] = useState<CrawlJob[]>([]);
+    const [jobs, setJobs] = useState<DiscoveryJob[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -46,9 +48,9 @@ export default function CrawlJobsPage() {
         try {
             setIsLoading(true);
             setError(null);
-            const response = await fetch('/api/crawl');
+            const response = await fetch('/api/discovery');
             if (!response.ok) {
-                throw new Error('Failed to fetch crawl jobs');
+                throw new Error('Failed to fetch discovery jobs');
             }
             const data = await response.json();
             setJobs(data.jobs || []);
@@ -72,11 +74,11 @@ export default function CrawlJobsPage() {
                         Completed
                     </Badge>
                 );
-            case 'crawling':
+            case 'running':
                 return (
                     <Badge className="bg-blue-600 hover:bg-blue-700">
                         <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                        Crawling
+                        Running
                     </Badge>
                 );
             case 'failed':
@@ -117,10 +119,10 @@ export default function CrawlJobsPage() {
                         <div>
                             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
                                 <Globe className="h-6 w-6" />
-                                Crawl Jobs
+                                Discovery Jobs
                             </h1>
                             <p className="text-muted-foreground">
-                                View history of domain crawl operations
+                                View history of URL discovery operations
                             </p>
                         </div>
                     </div>
@@ -132,9 +134,9 @@ export default function CrawlJobsPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Recent Crawl Jobs</CardTitle>
+                        <CardTitle>Recent Discovery Jobs</CardTitle>
                         <CardDescription>
-                            Domain scanning history showing discovered URLs and status
+                            Scan history showing discovered URLs and status
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -180,7 +182,7 @@ export default function CrawlJobsPage() {
                                             </TableCell>
                                             <TableCell>{getStatusBadge(job.status)}</TableCell>
                                             <TableCell className="text-right font-medium">
-                                                {job.totalDiscovered.toLocaleString()}
+                                                {job.urlCount.toLocaleString()}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 {job.pagesVisited.toLocaleString()}

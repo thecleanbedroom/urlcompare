@@ -155,6 +155,8 @@ src/
 
 **Response envelope:** adopt AGL's `{ success: true, result, metadata: { processingTimeMs } }` / `{ success: false, error }`. (Breaking change vs current `{error}` shapes — acceptable; web is the only consumer and moves with it.)
 
+> **Implemented differently (stage 4):** the existing `{data} | {error}` shapes were kept — they're already a consistent contract, and the MCP error envelope lives in mcp-server regardless. New discovery/urlset routes follow the same shape and add `total`/`offset`/`limit` pagination fields.
+
 **Dev:** `scripts/dev.mjs` esbuild watch+restart (copy from AGL). **Prod:** esbuild bundle → `server.mjs`, but **`@prisma/client`, generated output, and `better-sqlite3` stay external** — the native `.node` module can't be bundled (this is what actually breaks under esbuild on Prisma 7; there is no Rust engine to ship). Copy `node_modules/.prisma` + `@prisma/client` + `better-sqlite3` into the runtime image, or `prisma generate` in the image with prod deps present. `DATABASE_URL` resolved relative to package root, not `process.cwd()` (fixes current fragility).
 
 ### `packages/mcp-server`

@@ -34,7 +34,7 @@ interface ComparisonConfigProps {
   isRunning: boolean
   error: string | null
   onRun: () => void
-  onCrawlComplete: (urls: string[]) => void
+  onCrawlComplete: (urls: string[], urlSetId?: string) => void
 }
 
 export function ComparisonConfig({

@@ -66,6 +66,11 @@ export interface CrawlerOptions {
   excludePatterns?: string[]
   useOverrideToken?: boolean
   edgeOverrideToken?: string
+  queryPolicy?: QueryStringPolicy
+  queryAllowKeys?: string[]
+  queryDenyKeys?: string[]
+  normalizeQuery?: boolean
+  ignoreAnchors?: boolean
   onProgress?: (visited: number, discovered: number, currentUrl: string) => void
   onError?: (url: string, error: Error) => void
   signal?: AbortSignal
@@ -76,4 +81,37 @@ export interface CrawlResult {
   visitedCount: number
   errorCount: number
   errors: Array<{ url: string; error: string }>
+}
+
+/** A UrlSet with its URLs as the API exposes it. */
+export interface DiscoveredUrlDto {
+  id: string
+  url: string
+  sources: DiscoverySource[]
+  included: boolean
+}
+
+export interface UrlSetDto {
+  id: string
+  name: string | null
+  jobId: string | null
+  createdAt: string
+  urlCount?: number
+}
+
+export interface DiscoveryJobDto {
+  id: string
+  name: string | null
+  sourceDomain: string
+  status: JobStatus
+  sources: DiscoverySource[]
+  maxPages: number
+  maxDepth: number
+  delayMs: number
+  pagesVisited: number
+  errorCount: number
+  lastError: string | null
+  urlSetId: string | null
+  createdAt: string
+  completedAt: string | null
 }
