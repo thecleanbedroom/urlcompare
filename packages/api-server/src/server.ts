@@ -12,6 +12,8 @@ import { urlsetsRoute } from './routes/urlsets'
 import { verifyRoute } from './routes/verify'
 import { handleMcpRequest } from 'mcp-server'
 import { createUrlCompareService } from './services/urlcompare-service'
+import { apiReference } from '@scalar/hono-api-reference'
+import { openApiSpec } from './openapi'
 
 export const app = new Hono()
 
@@ -44,6 +46,13 @@ app.route('/api/jobs', jobsRoute)
 app.route('/api/verify', verifyRoute)
 app.route('/api/export', exportRoute)
 app.route('/api/auth/google', googleAuthRoute)
+
+app.get('/api/openapi.json', c => c.json(openApiSpec))
+app.get('/api/docs', apiReference({
+    url: '/api/openapi.json',
+    theme: 'purple',
+    pageTitle: 'urlCompare API Documentation',
+}))
 
 if (!process.env.VITEST) {
     serve({
