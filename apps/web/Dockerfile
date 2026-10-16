@@ -1,28 +1,33 @@
-FROM node:22-alpine
-# Install system dependencies
-RUN apk add --no-cache openssl
+# web — Next.js frontend (standalone output).
+# Build context must be the REPO ROOT (workspace deps).
+
+FROM node:22-alpine AS deps
 WORKDIR /app
-# Copy package files
-COPY package*.json ./
-# Copy Prisma config (Prisma 7 uses prisma.config.ts)
-COPY prisma ./prisma/
-COPY prisma.config.ts ./
-# Install dependencies
-RUN npm install
-# Generate Prisma Client (required — not auto-generated on install)
-RUN npx prisma generate
-# Copy source code
-COPY . .
-# Build the application
-RUN npm run build
-# Create necessary directories
-RUN mkdir -p /app/prisma/db
-# Set environment variables
-ENV NODE_ENV=production
-ENV PORT=3000
-ENV HOSTNAME=0.0.0.0
-ENV DATABASE_URL=file:./db/custom.db
-# Expose the port the app runs on
+COPY package.json package-lock.json ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/shared-types/package.json ./packages/shared-types/
+COPY packages/shared-logic/package.json ./packages/shared-logic/
+COPY packages/mcp-server/package.json ./packages/mcp-server/
+COPY packages/api-server/package.json ./packages/api-server/
+RUN npm ci
+
+FROM deps AS build
+# Rewrites are serialized into the standalone output at build time,
+# so the API upstream must be a build arg, not a runtime env.
+ARG API_URL=http://api:3001
+ENV API_URL=$API_URL
+COPY tsconfig.json ./
+COPY packages/shared-types ./packages/shared-types
+COPY packages/shared-logic ./packages/shared-logic
+COPY apps/web ./apps/web
+RUN npm run build --workspace=web
+
+FROM node:22-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0
+# Next standalone mirrors the workspace layout.
+COPY --from=build /app/apps/web/.next/standalone ./
+COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=build /app/apps/web/public ./apps/web/public
 EXPOSE 3000
-# Start the application (run prisma db push then start)
-CMD ["sh", "-c", "npx prisma db push && npm start"]
+CMD ["node", "apps/web/server.js"]

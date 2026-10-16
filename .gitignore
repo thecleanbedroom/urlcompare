@@ -55,3 +55,13 @@ local-*
 
 test
 prompt__pycache__/
+
+# sqlite databases (dev data — schema lives in prisma/migrations)
+*.db
+*.sqlite
+*.db-journal
+*.sqlite-journal
+
+# deployment artifacts
+*.zip
+*.tar.gz

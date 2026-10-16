@@ -10,9 +10,6 @@ const nextConfig: NextConfig = {
       { source: '/api/:path*', destination: `${apiUrl}/api/:path*` },
     ];
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   reactStrictMode: false,
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
   experimental: {
